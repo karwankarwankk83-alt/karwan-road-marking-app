@@ -1,6 +1,6 @@
 
 const B=window.BOOK_DATA;
-const FALLBACK_GALLERY=[{"id":1,"en":"Straight + Turn Arrow","ku":"تیری ڕاست + پێچ","category":"Arrows","src":"assets/photos/photo_01.jpg"},{"id":2,"en":"Accessible Parking Symbol","ku":"نیشانەی پارکینگی تایبەت","category":"Parking","src":"assets/photos/photo_02.jpg"},{"id":3,"en":"AHEAD","ku":"AHEAD","category":"Words","src":"assets/photos/photo_03.jpg"},{"id":4,"en":"SCHOOL","ku":"SCHOOL","category":"Words","src":"assets/photos/photo_04.jpg"},{"id":5,"en":"ONLY","ku":"ONLY","category":"Words","src":"assets/photos/photo_05.jpg"},{"id":6,"en":"STOP","ku":"STOP","category":"Words","src":"assets/photos/photo_06.jpg"},{"id":7,"en":"Yield Triangle","ku":"مثلثی پێش دەست","category":"Give Way","src":"assets/photos/photo_07.jpg"},{"id":8,"en":"Straight + Turn Arrow","ku":"تیری ڕاست + پێچ","category":"Arrows","src":"assets/photos/photo_08.jpg"},{"id":9,"en":"Yellow Box","ku":"ناوچەی زەرد","category":"Special","src":"assets/photos/photo_09.jpg"},{"id":10,"en":"Three-Direction Arrow","ku":"تیری سێ ئاراستە","category":"Arrows","src":"assets/photos/photo_10.jpg"},{"id":11,"en":"U-Turn Arrow","ku":"تیری U-Turn","category":"Arrows","src":"assets/photos/photo_11.jpg"},{"id":12,"en":"Exit Arrow","ku":"تیری دەرچوون","category":"Arrows","src":"assets/photos/photo_12.jpg"},{"id":13,"en":"Lane Drop Arrow","ku":"تیری کەمبوونەوەی ڕێڕەو","category":"Arrows","src":"assets/photos/photo_13.jpg"},{"id":14,"en":"Zebra Crossing","ku":"پەڕینەوەی هاوڵاتی","category":"Crossing","src":"assets/photos/photo_14.jpg"},{"id":15,"en":"Chevron","ku":"Chevron","category":"Special","src":"assets/photos/photo_15.jpg"},{"id":16,"en":"Hatched Area","ku":"ناوچەی هاشوورکراو","category":"Special","src":"assets/photos/photo_16.jpg"},{"id":17,"en":"Painted Island","ku":"دوورگەی بۆیاخکراو","category":"Special","src":"assets/photos/photo_17.jpg"},{"id":18,"en":"Yellow Box","ku":"ناوچەی زەرد","category":"Special","src":"assets/photos/photo_18.jpg"},{"id":19,"en":"Parking Bay","ku":"شوێنی پارککردن","category":"Parking","src":"assets/photos/photo_19.jpg"},{"id":20,"en":"Accessible Parking","ku":"پارکینگی تایبەت","category":"Parking","src":"assets/photos/photo_20.jpg"},{"id":21,"en":"Bicycle Symbol","ku":"نیشانەی پاسکیل","category":"Symbols","src":"assets/photos/photo_21.jpg"},{"id":22,"en":"SLOW","ku":"SLOW","category":"Words","src":"assets/photos/photo_22.jpg"},{"id":23,"en":"BUS","ku":"BUS","category":"Words","src":"assets/photos/photo_23.jpg"},{"id":24,"en":"TAXI","ku":"TAXI","category":"Words","src":"assets/photos/photo_24.jpg"},{"id":25,"en":"KEEP CLEAR","ku":"KEEP CLEAR","category":"Words","src":"assets/photos/photo_25.jpg"}];
+const FALLBACK_GALLERY=[{"id":7,"en":"Yield Triangle","ku":"مثلثی پێش دەست","category":"Give Way","src":"assets/photos/photo_07.jpg"},{"id":8,"en":"Straight + Turn Arrow","ku":"تیری ڕاست + پێچ","category":"Arrows","src":"assets/photos/photo_08.jpg"},{"id":9,"en":"Yellow Box","ku":"ناوچەی زەرد","category":"Special","src":"assets/photos/photo_09.jpg"},{"id":10,"en":"Three-Direction Arrow","ku":"تیری سێ ئاراستە","category":"Arrows","src":"assets/photos/photo_10.jpg"},{"id":12,"en":"Exit Arrow","ku":"تیری دەرچوون","category":"Arrows","src":"assets/photos/photo_12.jpg"},{"id":13,"en":"Lane Drop Arrow","ku":"تیری کەمبوونەوەی ڕێڕەو","category":"Arrows","src":"assets/photos/photo_13.jpg"},{"id":15,"en":"Chevron","ku":"Chevron","category":"Special","src":"assets/photos/photo_15.jpg"},{"id":16,"en":"Hatched Area","ku":"ناوچەی هاشوورکراو","category":"Special","src":"assets/photos/photo_16.jpg"},{"id":17,"en":"Painted Island","ku":"دوورگەی بۆیاخکراو","category":"Special","src":"assets/photos/photo_17.jpg"},{"id":19,"en":"Parking Bay","ku":"شوێنی پارککردن","category":"Parking","src":"assets/photos/photo_19.jpg"},{"id":20,"en":"Accessible Parking","ku":"پارکینگی تایبەت","category":"Parking","src":"assets/photos/photo_20.jpg"},{"id":21,"en":"Bicycle Symbol","ku":"نیشانەی پاسکیل","category":"Symbols","src":"assets/photos/photo_21.jpg"},{"id":22,"en":"SLOW","ku":"SLOW","category":"Words","src":"assets/photos/photo_22.jpg"},{"id":23,"en":"BUS","ku":"BUS","category":"Words","src":"assets/photos/photo_23.jpg"},{"id":24,"en":"TAXI","ku":"TAXI","category":"Words","src":"assets/photos/photo_24.jpg"},{"id":25,"en":"KEEP CLEAR","ku":"KEEP CLEAR","category":"Words","src":"assets/photos/photo_25.jpg"}];
 const G=Array.isArray(window.GALLERY_DATA)&&window.GALLERY_DATA.length?window.GALLERY_DATA:FALLBACK_GALLERY,V=document.getElementById('view'),M=document.getElementById('modalRoot');
 const S={get(k,d=null){try{return JSON.parse(localStorage.getItem('ks_'+k))??d}catch(e){return d}},set(k,v){localStorage.setItem('ks_'+k,JSON.stringify(v))}};
 let state={view:'home',chapter:null,gallery:'All',tool:'calc',installPrompt:null};
@@ -34,6 +34,13 @@ const GALLERY_CATEGORY_LABELS={
   Numbers:'ژمارەکان',
   Other:'هی تر'
 };
+const GALLERY_CATEGORY_ORDER=['All','Arrows','Give Way','Crossing','Parking','Words','Symbols','Special','Lines','Numbers','Other'];
+function galleryCategories(){
+  let available=new Set(G.filter(Boolean).map(x=>x.category||'Other'));
+  let ordered=GALLERY_CATEGORY_ORDER.filter(c=>c==='All'||available.has(c));
+  let extras=[...available].filter(c=>!GALLERY_CATEGORY_ORDER.includes(c)).sort();
+  return [...ordered,...extras]
+}
 function galleryCategoryLabel(c){return GALLERY_CATEGORY_LABELS[c]||c}
 function galleryCategoryCount(c){return c==='All'?G.length:G.filter(x=>x&&x.category===c).length}
 
@@ -82,7 +89,7 @@ function applySettings(){let theme=S.get('theme','dark'),fs=S.get('font',1),lh=S
   .v8-gallery-tabs{margin-bottom:8px}.v8-gallery-tabs .chip{display:flex;align-items:center;gap:6px}.v8-gallery-tabs .chip em{font-style:normal;font-size:8px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:#252928;display:grid;place-items:center;direction:ltr}.v8-gallery-tabs .chip.active em{background:#111;color:var(--yellow)}
   .v8-gallery-subhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 2px}.v8-gallery-subhead b{display:block;font-size:13px}.v8-gallery-subhead small{display:block;color:var(--muted);font-size:9px;margin-top:3px}.v8-gallery-subhead button{border:0;background:transparent;color:var(--yellow);font-size:9px}
   .v8-gallery-grid{gap:11px}.v8-photo-card{border-radius:18px;transition:.18s transform,.18s border-color;overflow:hidden}.v8-photo-card:active{transform:scale(.985)}
-  .v8-photo-wrap{position:relative;overflow:hidden;background:#090909}.v8-photo-card img{aspect-ratio:1.18/1;transition:.25s transform}.v8-photo-card:hover img{transform:scale(1.025)}
+  .v8-photo-wrap{position:relative;overflow:hidden;background:linear-gradient(145deg,#111313,#070808)}.v8-photo-card img{aspect-ratio:4/3;object-fit:contain;padding:5px;transition:.25s transform}.v8-photo-card:hover img{transform:scale(1.018)}
   .v8-photo-num{position:absolute;top:8px;left:8px;background:#000b;color:#fff;border:1px solid #ffffff29;border-radius:8px;padding:4px 6px;font-size:8px;direction:ltr}
   .v8-photo-badge{position:absolute;right:8px;bottom:8px;background:#ffc400e8;color:#111;border-radius:999px;padding:5px 8px;font-size:8px;font-weight:900;box-shadow:0 3px 12px #0007}
   .v8-photo-card .cap{padding:10px 11px 11px}.v8-photo-card .cap b{font-size:11px;line-height:1.45}.v8-photo-card .cap small{font-size:8px;margin-top:5px}
@@ -204,7 +211,7 @@ function saveNote(id){let n=S.get('notes',{});n[id]=$('#chapterNote').value;S.se
 async function shareChapter(id){let c=B.chapters.find(x=>x.id===id),text=`${c.title} — ${B.meta.title}`;if(navigator.share){try{await navigator.share({title:B.meta.title,text})}catch(e){}}else{navigator.clipboard?.writeText(text);toast('کۆپی کرا')}}
 function galleryView(cat=state.gallery){
   cleanupReader();setNav('gallery');state.gallery=cat||'All';
-  let cats=['All',...new Set(G.filter(Boolean).map(x=>x.category||'Other'))];
+  let cats=galleryCategories();
   if(!cats.includes(state.gallery))state.gallery='All';
   let items=state.gallery==='All'?G:G.filter(x=>x.category===state.gallery);
 
@@ -213,7 +220,7 @@ function galleryView(cat=state.gallery){
     <div>
       <span class="v8-eyebrow">ROAD MARKING CATALOG</span>
       <h1>کاتالۆگی وێنەکان</h1>
-      <p>وێنەکان بە پۆل ڕێکخراون. ناو بنووسە یان پۆلێک هەڵبژێرە.</p>
+      <p>وێنە بەردەستەکان بە پۆل ڕێکخراون؛ گەڕان بکە یان پۆلێک هەڵبژێرە.</p>
     </div>
     <div class="v8-gallery-count"><b id="galleryCount">${items.length}</b><small>وێنە</small></div>
   </section>
@@ -228,7 +235,7 @@ function galleryView(cat=state.gallery){
   </div>
 
   <div class="v8-gallery-subhead">
-    <div><b>${esc(galleryCategoryLabel(state.gallery))}</b><small>${items.length} وێنە لەم پۆلەدا</small></div>
+    <div><b>${esc(galleryCategoryLabel(state.gallery))}</b><small id="galleryVisibleCount">${items.length} وێنە لەم پۆلەدا</small></div>
     <button onclick="galleryView('All')">پاککردنەوەی فلتەر</button>
   </div>
 
@@ -236,7 +243,7 @@ function galleryView(cat=state.gallery){
     ${items.map((p,i)=>`
       <article class="photo-card v8-photo-card" data-search="${esc((p.ku+' '+p.en+' '+p.category).toLowerCase())}" onclick="showPhoto(${p.id})">
         <div class="v8-photo-wrap">
-          <img loading="lazy" src="${p.src}" alt="${esc(p.en)}">
+          <img loading="${i<4?'eager':'lazy'}" decoding="async" src="${p.src}" alt="${esc(p.ku)} — ${esc(p.en)}" onerror="handleGalleryImageError(this)">
           <span class="v8-photo-num">#${String(i+1).padStart(2,'0')}</span>
           <span class="v8-photo-badge">${esc(galleryCategoryLabel(p.category))}</span>
         </div>
@@ -254,6 +261,14 @@ function filterGallery(q){
   let cards=$$('#galleryGrid .v8-photo-card'),shown=0;
   cards.forEach(card=>{let ok=!q||card.dataset.search.includes(q);card.style.display=ok?'':'none';if(ok)shown++});
   let c=$('#galleryCount');if(c)c.textContent=shown;
+  let v=$('#galleryVisibleCount');if(v)v.textContent=shown+' وێنەی بەردەست';
+  let e=$('#galleryEmpty');if(e)e.style.display=shown?'none':'block'
+}
+function handleGalleryImageError(img){
+  let card=img?.closest('.v8-photo-card');if(card)card.remove();
+  let shown=$('#galleryGrid .v8-photo-card').filter(x=>x.style.display!=='none').length;
+  let c=$('#galleryCount');if(c)c.textContent=shown;
+  let v=$('#galleryVisibleCount');if(v)v.textContent=shown+' وێنەی بەردەست';
   let e=$('#galleryEmpty');if(e)e.style.display=shown?'none':'block'
 }
 function showPhoto(id){
