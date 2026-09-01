@@ -1,1 +1,55 @@
-const CACHE="ks-roadmark-v5";const ASSETS=["./", "./index.html", "./styles.css", "./app.js", "./book-data.js", "./gallery-data.js", "./manifest.json", "./icon-192.png", "./icon-512.png", "./assets/photos/photo_01.jpg", "./assets/photos/photo_02.jpg", "./assets/photos/photo_03.jpg", "./assets/photos/photo_04.jpg", "./assets/photos/photo_05.jpg", "./assets/photos/photo_06.jpg", "./assets/photos/photo_07.jpg", "./assets/photos/photo_08.jpg", "./assets/photos/photo_09.jpg", "./assets/photos/photo_10.jpg", "./assets/photos/photo_11.jpg", "./assets/photos/photo_12.jpg", "./assets/photos/photo_13.jpg", "./assets/photos/photo_14.jpg", "./assets/photos/photo_15.jpg", "./assets/photos/photo_16.jpg", "./assets/photos/photo_17.jpg", "./assets/photos/photo_18.jpg", "./assets/photos/photo_19.jpg", "./assets/photos/photo_20.jpg", "./assets/photos/photo_21.jpg", "./assets/photos/photo_22.jpg", "./assets/photos/photo_23.jpg", "./assets/photos/photo_24.jpg", "./assets/photos/photo_25.jpg", "./assets/docs/engineering_drawings.pdf", "./assets/docs/book_drawings.pdf"];self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=="GET")return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(resp=>{let copy=resp.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return resp}).catch(()=>caches.match('./index.html'))))});
+const CACHE="ks-roadmark-v7";
+const CORE=[
+  "./","./index.html","./styles.css","./app.js","./book-data.js","./gallery-data.js",
+  "./manifest.json","./icon-192.png","./icon-512.png"
+];
+
+self.addEventListener("install",event=>{
+  event.waitUntil(
+    caches.open(CACHE).then(cache=>cache.addAll(CORE)).catch(()=>{})
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener("activate",event=>{
+  event.waitUntil(
+    caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
+  );
+  self.clients.claim();
+});
+
+async function networkFirst(req){
+  const cache=await caches.open(CACHE);
+  try{
+    const fresh=await fetch(req,{cache:"no-store"});
+    if(fresh && fresh.ok) cache.put(req,fresh.clone());
+    return fresh;
+  }catch(e){
+    const old=await cache.match(req);
+    if(old) return old;
+    throw e;
+  }
+}
+
+self.addEventListener("fetch",event=>{
+  const req=event.request;
+  if(req.method!=="GET") return;
+  const url=new URL(req.url);
+  const dynamic=["/app.js","/book-data.js","/gallery-data.js","/manifest.json"];
+  if(url.origin===location.origin && dynamic.some(x=>url.pathname.endsWith(x))){
+    event.respondWith(networkFirst(req));
+    return;
+  }
+  if(req.mode==="navigate"){
+    event.respondWith(networkFirst(req).catch(()=>caches.match("./index.html")));
+    return;
+  }
+  event.respondWith(
+    caches.match(req).then(hit=>hit||fetch(req).then(resp=>{
+      if(url.origin===location.origin && resp && resp.ok){
+        const copy=resp.clone(); caches.open(CACHE).then(c=>c.put(req,copy));
+      }
+      return resp;
+    }))
+  );
+});
