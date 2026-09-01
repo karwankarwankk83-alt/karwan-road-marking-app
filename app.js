@@ -1,5 +1,7 @@
 
-const B=window.BOOK_DATA,G=window.GALLERY_DATA,V=document.getElementById('view'),M=document.getElementById('modalRoot');
+const B=window.BOOK_DATA;
+const FALLBACK_GALLERY=[{"id":1,"en":"Straight + Turn Arrow","ku":"تیری ڕاست + پێچ","category":"Arrows","src":"assets/photos/photo_01.jpg"},{"id":2,"en":"Accessible Parking Symbol","ku":"نیشانەی پارکینگی تایبەت","category":"Parking","src":"assets/photos/photo_02.jpg"},{"id":3,"en":"AHEAD","ku":"AHEAD","category":"Words","src":"assets/photos/photo_03.jpg"},{"id":4,"en":"SCHOOL","ku":"SCHOOL","category":"Words","src":"assets/photos/photo_04.jpg"},{"id":5,"en":"ONLY","ku":"ONLY","category":"Words","src":"assets/photos/photo_05.jpg"},{"id":6,"en":"STOP","ku":"STOP","category":"Words","src":"assets/photos/photo_06.jpg"},{"id":7,"en":"Yield Triangle","ku":"مثلثی پێش دەست","category":"Give Way","src":"assets/photos/photo_07.jpg"},{"id":8,"en":"Straight + Turn Arrow","ku":"تیری ڕاست + پێچ","category":"Arrows","src":"assets/photos/photo_08.jpg"},{"id":9,"en":"Yellow Box","ku":"ناوچەی زەرد","category":"Special","src":"assets/photos/photo_09.jpg"},{"id":10,"en":"Three-Direction Arrow","ku":"تیری سێ ئاراستە","category":"Arrows","src":"assets/photos/photo_10.jpg"},{"id":11,"en":"U-Turn Arrow","ku":"تیری U-Turn","category":"Arrows","src":"assets/photos/photo_11.jpg"},{"id":12,"en":"Exit Arrow","ku":"تیری دەرچوون","category":"Arrows","src":"assets/photos/photo_12.jpg"},{"id":13,"en":"Lane Drop Arrow","ku":"تیری کەمبوونەوەی ڕێڕەو","category":"Arrows","src":"assets/photos/photo_13.jpg"},{"id":14,"en":"Zebra Crossing","ku":"پەڕینەوەی هاوڵاتی","category":"Crossing","src":"assets/photos/photo_14.jpg"},{"id":15,"en":"Chevron","ku":"Chevron","category":"Special","src":"assets/photos/photo_15.jpg"},{"id":16,"en":"Hatched Area","ku":"ناوچەی هاشوورکراو","category":"Special","src":"assets/photos/photo_16.jpg"},{"id":17,"en":"Painted Island","ku":"دوورگەی بۆیاخکراو","category":"Special","src":"assets/photos/photo_17.jpg"},{"id":18,"en":"Yellow Box","ku":"ناوچەی زەرد","category":"Special","src":"assets/photos/photo_18.jpg"},{"id":19,"en":"Parking Bay","ku":"شوێنی پارککردن","category":"Parking","src":"assets/photos/photo_19.jpg"},{"id":20,"en":"Accessible Parking","ku":"پارکینگی تایبەت","category":"Parking","src":"assets/photos/photo_20.jpg"},{"id":21,"en":"Bicycle Symbol","ku":"نیشانەی پاسکیل","category":"Symbols","src":"assets/photos/photo_21.jpg"},{"id":22,"en":"SLOW","ku":"SLOW","category":"Words","src":"assets/photos/photo_22.jpg"},{"id":23,"en":"BUS","ku":"BUS","category":"Words","src":"assets/photos/photo_23.jpg"},{"id":24,"en":"TAXI","ku":"TAXI","category":"Words","src":"assets/photos/photo_24.jpg"},{"id":25,"en":"KEEP CLEAR","ku":"KEEP CLEAR","category":"Words","src":"assets/photos/photo_25.jpg"}];
+const G=Array.isArray(window.GALLERY_DATA)&&window.GALLERY_DATA.length?window.GALLERY_DATA:FALLBACK_GALLERY,V=document.getElementById('view'),M=document.getElementById('modalRoot');
 const S={get(k,d=null){try{return JSON.parse(localStorage.getItem('ks_'+k))??d}catch(e){return d}},set(k,v){localStorage.setItem('ks_'+k,JSON.stringify(v))}};
 let state={view:'home',chapter:null,gallery:'All',tool:'calc',installPrompt:null};
 
@@ -33,7 +35,7 @@ const GALLERY_CATEGORY_LABELS={
   Other:'هی تر'
 };
 function galleryCategoryLabel(c){return GALLERY_CATEGORY_LABELS[c]||c}
-function galleryCategoryCount(c){return c==='All'?G.length:G.filter(x=>x.category===c).length}
+function galleryCategoryCount(c){return c==='All'?G.length:G.filter(x=>x&&x.category===c).length}
 
 const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -101,6 +103,7 @@ function applySettings(){let theme=S.get('theme','dark'),fs=S.get('font',1),lh=S
 })();
 
 applySettings();
+document.body.dataset.ksVersion='8.1';
 const brandBtn=$('.brand');
 if(brandBtn){
   brandBtn.innerHTML='<img src="icon-192.png" alt="KS" style="width:100%;height:100%;display:block;object-fit:cover;border-radius:11px">';
@@ -116,7 +119,7 @@ function home(){
   let last=S.get('last'),fav=S.get('fav',[]),pr=S.get('progress',{});
   let lastC=last&&B.chapters.find(c=>c.id===last.id);
   let done=Object.values(pr).filter(v=>v>=95).length;
-  let cats=['Arrows','Parking','Words','Crossing','Give Way','Special','Symbols'].filter(c=>G.some(x=>x.category===c));
+  let cats=['Arrows','Parking','Words','Crossing','Give Way','Special','Symbols'].filter(c=>G.some(x=>x&&x.category===c));
 
   V.innerHTML=`
   <section class="v8-hero">
@@ -182,7 +185,7 @@ function saveNote(id){let n=S.get('notes',{});n[id]=$('#chapterNote').value;S.se
 async function shareChapter(id){let c=B.chapters.find(x=>x.id===id),text=`${c.title} — ${B.meta.title}`;if(navigator.share){try{await navigator.share({title:B.meta.title,text})}catch(e){}}else{navigator.clipboard?.writeText(text);toast('کۆپی کرا')}}
 function galleryView(cat=state.gallery){
   cleanupReader();setNav('gallery');state.gallery=cat||'All';
-  let cats=['All',...new Set(G.map(x=>x.category))];
+  let cats=['All',...new Set(G.filter(Boolean).map(x=>x.category||'Other'))];
   if(!cats.includes(state.gallery))state.gallery='All';
   let items=state.gallery==='All'?G:G.filter(x=>x.category===state.gallery);
 
