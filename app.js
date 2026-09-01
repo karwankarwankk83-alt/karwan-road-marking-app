@@ -68,7 +68,7 @@ function applySettings(){let theme=S.get('theme','dark'),fs=S.get('font',1),lh=S
   .v8-progress-ring{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--yellow) var(--p),#2c302e 0);position:relative}
   .v8-progress-ring:after{content:"";position:absolute;inset:6px;background:var(--panel);border-radius:50%}.v8-progress-ring b{z-index:1;color:var(--yellow);font-size:10px;direction:ltr}
   .v8-resume-text b{display:block;font-size:13px}.v8-resume-text small{display:block;color:var(--muted);font-size:9px;margin-top:5px}.v8-arrow{color:var(--yellow);font-size:28px}
-  .v8-tools-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.v8-tools-grid button{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:16px;padding:13px 8px;cursor:pointer}
+  .v8-tools-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.v8-tools-grid button{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:16px;padding:13px 8px;cursor:pointer}
   .v8-tools-grid i{display:grid;place-items:center;width:35px;height:35px;margin:0 auto 8px;border-radius:10px;background:#242100;color:var(--yellow);font-style:normal;font-size:18px}.v8-tools-grid b{display:block;font-size:11px}.v8-tools-grid small{display:block;color:var(--muted);font-size:8px;margin-top:3px}
   .v8-category-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.v8-category-grid button{min-width:0;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:16px;padding:12px 8px;text-align:center;cursor:pointer}
   .v8-cat-icon{display:grid;place-items:center;width:38px;height:38px;margin:0 auto 8px;background:#222300;border:1px solid #4a430c;color:var(--yellow);border-radius:11px;font-weight:1000;direction:ltr}
@@ -89,6 +89,24 @@ function applySettings(){let theme=S.get('theme','dark'),fs=S.get('font',1),lh=S
   .v8-photo-modal .modal-head>div{min-width:0}.v8-photo-modal .modal-head b{display:block;font-size:14px;margin-top:6px}.v8-photo-modal .modal-head small{display:block;color:var(--muted);font-size:9px;direction:ltr;margin-top:3px}
   .v8-modal-badge{display:inline-block;background:#272300;color:var(--yellow);border:1px solid #4d4306;border-radius:999px;padding:4px 7px;font-size:8px}
   .v8-modal-nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:10px}.v8-modal-nav button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:11px;padding:9px;font-size:10px}.v8-modal-nav span{font-size:9px;color:var(--muted);direction:ltr}
+
+  .v82-manager-hero{border:1px solid #514615;border-radius:24px;padding:20px;background:
+    radial-gradient(circle at 0 0,rgba(255,196,0,.17),transparent 36%),linear-gradient(145deg,#171912,#0b0c0c);margin-bottom:13px}
+  .v82-manager-hero h1{font-size:23px;margin:5px 0}.v82-manager-hero p{color:var(--muted);font-size:11px;line-height:1.8;margin:0}
+  .v82-manager-status{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}.v82-manager-status span{border:1px solid #343733;background:#111313;border-radius:999px;padding:6px 9px;font-size:9px;color:#cbd0ce}
+  .v82-manager-status .ready{color:#82e7a0}
+  .v82-manager-card{border:1px solid var(--line);background:linear-gradient(135deg,var(--panel),#111313);border-radius:19px;padding:15px;margin:10px 0}
+  .v82-manager-card h3{font-size:14px;margin:0 0 5px}.v82-manager-card p{font-size:10px;color:var(--muted);line-height:1.8;margin:0 0 10px}
+  .v82-manager-card textarea{width:100%;min-height:125px;resize:vertical;background:#090a0a;color:var(--text);border:1px solid #343836;border-radius:14px;padding:12px;outline:0;font:inherit;font-size:12px;line-height:1.8}
+  .v82-manager-card textarea:focus{border-color:#806900}
+  .v82-manager-actions{display:grid;grid-template-columns:1.25fr 1fr;gap:8px;margin-top:9px}
+  .v82-manager-actions button{border-radius:13px;padding:12px 10px;font-weight:900;font-size:11px;cursor:pointer}
+  .v82-manager-primary{background:var(--yellow);color:#111;border:1px solid var(--yellow)}
+  .v82-manager-secondary{background:#191b1b;color:#fff;border:1px solid #343837}
+  .v82-manager-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .v82-manager-list div{border:1px solid var(--line);background:#111313;border-radius:14px;padding:11px}.v82-manager-list b{display:block;font-size:10px}.v82-manager-list small{display:block;color:var(--muted);font-size:8px;margin-top:4px}
+  .bottom-nav button[data-view="manager"] span{color:var(--yellow)}
+
   @media(max-width:650px){
     .v8-hero{padding:16px;border-radius:22px}.v8-logo{width:72px;height:72px}.v8-hero h1{font-size:19px}.v8-hero p{font-size:10px}
     .v8-hero-actions{grid-template-columns:1.35fr 1fr 1fr}.v8-action{padding:11px 8px}.v8-action b{font-size:10px}.v8-action small{font-size:8px}
@@ -158,6 +176,7 @@ function home(){
     <button onclick="toolsView('standards')"><i>§</i><b>ستانداردەکان</b><small>EN / Iraqi</small></button>
     <button onclick="searchView()"><i>⌕</i><b>گەڕان</b><small>لە کتێبەکەدا</small></button>
     <button onclick="toolsView('project')"><i>Σ</i><b>پڕۆژە</b><small>کۆی ماددە</small></button>
+    <button onclick="managerView()"><i>✦</i><b>ChatGPT</b><small>بەڕێوەبەری ئەپ</small></button>
   </div>
 
   <div class="v8-section-title"><div><span>کاتالۆگ</span><h2>وێنەکان بە پۆل</h2></div><button class="v8-link" onclick="galleryView()">هەمووی ببینە</button></div>
@@ -274,8 +293,75 @@ function docsTool(){$('#toolBody').innerHTML=`<div class="docs"><a class="doc-ca
 let searchTimer;function searchView(q=''){cleanupReader();setNav('search');V.innerHTML=`<div class="searchbar"><input class="search-input" id="globalSearch" placeholder="گەڕان لە هەموو کتێب... Thermoplastic، Zebra، EN 1436" value="${esc(q)}"></div><div id="searchResults"></div>`;let e=$('#globalSearch');e.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>runSearch(e.value),160)});runSearch(q);setTimeout(()=>e.focus(),50);window.scrollTo(0,0)}
 function flatText(b){return b.type==='p'?b.text:b.rows.flat().join(' ')}function runSearch(q){let root=$('#searchResults');q=q.trim();if(q.length<2){root.innerHTML='<div class="empty">لانیکەم دوو پیت بنووسە.</div>';return}let qq=q.toLowerCase(),hits=[];for(let c of B.chapters){for(let i=0;i<c.blocks.length;i++){let t=flatText(c.blocks[i]);if(t.toLowerCase().includes(qq)){hits.push({c,i,t});if(hits.length>=60)break}}if(hits.length>=60)break}root.innerHTML=hits.length?hits.map(h=>{let idx=h.t.toLowerCase().indexOf(qq),st=Math.max(0,idx-65),sn=h.t.slice(st,idx+q.length+100),safe=esc(sn),re=new RegExp(escReg(q),'ig');safe=safe.replace(re,m=>`<mark>${m}</mark>`);return `<article class="search-result" onclick="openChapterAt(${h.c.id},${h.i})"><b>${esc(h.c.title)}</b><p>${safe}</p></article>`}).join(''):'<div class="empty">هیچ ئەنجامێک نەدۆزرایەوە.</div>'}
 function escReg(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}function openChapterAt(id,i){openChapter(id);setTimeout(()=>jumpToBlock(i),100)}
+
+function injectManagerNav(){
+  let nav=document.querySelector('.bottom-nav');
+  if(!nav||nav.querySelector('[data-view="manager"]'))return;
+  let b=document.createElement('button');
+  b.dataset.view='manager';
+  b.innerHTML='<span>✦</span><small>ChatGPT</small>';
+  nav.appendChild(b);
+}
+function managerView(){
+  cleanupReader();setNav('manager');
+  V.innerHTML=`
+  <section class="v82-manager-hero">
+    <span class="v8-eyebrow">KS APP MANAGER</span>
+    <h1>ChatGPT / بەڕێوەبەری ئەپ</h1>
+    <p>لەوێ داواکارییەکەت بنووسە. دوگمەکە دەقەکە کۆپی دەکات و ChatGPT دەکاتەوە تا گۆڕانکارییەکەت پێ بسپێریت.</p>
+    <div class="v82-manager-status">
+      <span class="ready">● ChatGPT Ready</span>
+      <span>KS Road Marking</span>
+      <span>GitHub + Vercel</span>
+    </div>
+  </section>
+
+  <section class="v82-manager-card">
+    <h3>چی دەتەوێت بگۆڕدرێت؟</h3>
+    <p>نموونە: «وێنەی نوێ زیاد بکە»، «هەژمارکەر چاک بکە»، «بەشێکی نوێ بۆ ستانداردەکان زیاد بکە».</p>
+    <textarea id="managerRequest" placeholder="داواکاری گۆڕانکارییەکەت لێرە بنووسە..."></textarea>
+    <div class="v82-manager-actions">
+      <button class="v82-manager-primary" onclick="sendManagerRequest()">کۆپی + کردنەوەی ChatGPT</button>
+      <button class="v82-manager-secondary" onclick="openChatGPT()">تەنها ChatGPT بکەرەوە</button>
+    </div>
+  </section>
+
+  <section class="v82-manager-card">
+    <h3>کارەکانی کە دەتوانرێت بەڕێوەببرێن</h3>
+    <div class="v82-manager-list">
+      <div><b>سەرەتا و دیزاین</b><small>Home, menu, layout</small></div>
+      <div><b>کاتالۆگی وێنە</b><small>Photos, categories</small></div>
+      <div><b>هەژمارکەر</b><small>Paint, beads, waste</small></div>
+      <div><b>کتێب و دەق</b><small>Chapters, standards</small></div>
+      <div><b>فایل و کۆد</b><small>GitHub repository</small></div>
+      <div><b>بڵاوکردنەوە</b><small>Vercel deployment</small></div>
+    </div>
+  </section>
+
+  <section class="v82-manager-card">
+    <h3>تێبینی</h3>
+    <p>ئەم بەشە API بەکارناهێنێت، بۆیە خەرجی API نییە. بۆ ئەوەی ChatGPT بتوانێت فایلەکانی GitHub ڕاستەوخۆ بگۆڕێت، پەیوەندی GitHub و مۆڵەتی نووسین پێویستە.</p>
+  </section>`;
+  window.scrollTo(0,0)
+}
+function openChatGPT(){
+  window.open('https://chatgpt.com/','_blank','noopener,noreferrer');
+}
+async function sendManagerRequest(){
+  let el=$('#managerRequest'),q=(el?.value||'').trim();
+  if(!q){toast('سەرەتا داواکارییەکەت بنووسە');el?.focus();return}
+  let text=`KS Road Marking App — داواکاری گۆڕانکاری:\n${q}\n\nProject: karwan-road-marking-app\nApp: https://karwan-road-marking-app.vercel.app/`;
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('داواکاری کۆپی کرا');
+  }catch(e){
+    let t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();toast('داواکاری کۆپی کرا')
+  }
+  setTimeout(()=>openChatGPT(),250)
+}
+
 function settingsModal(){let theme=S.get('theme','dark'),font=S.get('font',1),lh=S.get('lh',1.95);M.innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="modal-card"><div class="modal-head"><b>ڕێکخستنەکان</b><button onclick="closeModal()">×</button></div><div class="settings-row"><span>ڕووکار</span><div class="switch"><button class="${theme==='dark'?'active':''}" onclick="S.set('theme','dark');applySettings();settingsModal()">Dark</button><button class="${theme==='light'?'active':''}" onclick="S.set('theme','light');applySettings();settingsModal()">Light</button></div></div><div class="settings-row"><span>قەبارەی نووسین</span><div class="switch"><button onclick="setFont(-.08)">A−</button><button>${font.toFixed(2)}</button><button onclick="setFont(.08)">A+</button></div></div><div class="settings-row"><span>دووری نێوان دێڕەکان</span><div class="switch"><button onclick="setLH(-.1)">−</button><button>${lh.toFixed(2)}</button><button onclick="setLH(.1)">+</button></div></div><div class="settings-row"><span>دامەزراندنی ئەپ</span><button class="btn primary small" onclick="installApp()">Install</button></div><div class="settings-row"><span>پاککردنەوەی Notes / Progress</span><button class="btn danger small" onclick="resetAppData()">Reset</button></div></div></div>`}
 function setFont(d){S.set('font',Math.max(.8,Math.min(1.45,S.get('font',1)+d)));applySettings();settingsModal()}function setLH(d){S.set('lh',Math.max(1.5,Math.min(2.4,S.get('lh',1.95)+d)));applySettings();settingsModal()}function resetAppData(){if(confirm('هەموو Progress، Favorites، Notes و Project data بسڕدرێنەوە؟')){Object.keys(localStorage).filter(k=>k.startsWith('ks_')).forEach(k=>localStorage.removeItem(k));applySettings();closeModal();home();toast('Data reset')}}
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();state.installPrompt=e;$('#installTop').style.display='block'});async function installApp(){if(state.installPrompt){state.installPrompt.prompt();await state.installPrompt.userChoice;state.installPrompt=null}else{toast('لە Chrome: Menu → Add to Home screen / Install app')}}
-$$('.bottom-nav button').forEach(b=>b.onclick=()=>({home,book:bookView,gallery:galleryView,tools:toolsView,search:searchView}[b.dataset.view]||home)());$$('[data-action="home"]').forEach(b=>b.onclick=home);$$('[data-action="settings"]').forEach(b=>b.onclick=settingsModal);$$('[data-action="install"]').forEach(b=>b.onclick=installApp);
+injectManagerNav();$$('.bottom-nav button').forEach(b=>b.onclick=()=>({home,book:bookView,gallery:galleryView,tools:toolsView,search:searchView,manager:managerView}[b.dataset.view]||home)());$$('[data-action="home"]').forEach(b=>b.onclick=home);$$('[data-action="settings"]').forEach(b=>b.onclick=settingsModal);$$('[data-action="install"]').forEach(b=>b.onclick=installApp);
 if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register('service-worker.js').catch(()=>{});home();
