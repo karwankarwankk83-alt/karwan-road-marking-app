@@ -4,8 +4,7 @@ const PAINT={
  thermo:{name:'سێرمۆ',thickness:2,density:2,beads:.45,pack:25},
  cold:{name:'بۆیاخی سارد ئەکریلیک',thickness:.4,density:1.5,beads:.35,pack:20},
  water:{name:'ئەکریلیکی بنەمای ئاو',thickness:.4,density:1.5,beads:.35,pack:20},
- mma:{name:'پلاستیکی سارد / MMA',thickness:2,density:1.5,beads:.45,pack:25},
- twoK:{name:'بۆیاخی دوو کۆمپۆنێت',thickness:.4,density:1.5,beads:.35,pack:20}
+ twoK:{name:'بۆیاخی دوو کۆمپۆنێت (MMA)',thickness:2,density:1.4,beads:.45,pack:25}
 };
 const SURFACE={
  smooth:{name:'قیری نوێ و ساف',factor:1},
