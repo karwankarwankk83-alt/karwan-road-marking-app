@@ -135,7 +135,7 @@ function applySettings(){let theme=S.get('theme','dark'),fs=S.get('font',1),lh=S
   .v8-photo-modal .modal-head>div{min-width:0}.v8-photo-modal .modal-head b{display:block;font-size:14px;margin-top:6px}.v8-photo-modal .modal-head small{display:block;color:var(--muted);font-size:9px;direction:ltr;margin-top:3px}
   .v8-modal-badge{display:inline-block;background:#272300;color:var(--yellow);border:1px solid #4d4306;border-radius:999px;padding:4px 7px;font-size:8px}
   .v8-modal-nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:10px}.v8-modal-nav button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:11px;padding:9px;font-size:10px}.v8-modal-nav span{font-size:9px;color:var(--muted);direction:ltr}
-  .v8-upload-picker{display:block;border:2px dashed #625616;background:#13150f;border-radius:17px;padding:18px;text-align:center;cursor:pointer;margin-bottom:12px}.v8-upload-picker span{display:grid;place-items:center;width:46px;height:46px;margin:0 auto 9px;border-radius:14px;background:var(--yellow);color:#111;font-size:25px}.v8-upload-picker b{display:block;font-size:13px}.v8-upload-picker small{display:block;color:var(--muted);font-size:9px;margin-top:5px}.v8-upload-picker input{display:none}
+  .v8-upload-picker{display:block;width:100%;color:var(--text);font-family:inherit;border:2px dashed #625616;background:#13150f;border-radius:17px;padding:18px;text-align:center;cursor:pointer;margin-bottom:12px}.v8-upload-picker span{display:grid;place-items:center;width:46px;height:46px;margin:0 auto 9px;border-radius:14px;background:var(--yellow);color:#111;font-size:25px}.v8-upload-picker b{display:block;font-size:13px}.v8-upload-picker small{display:block;color:var(--muted);font-size:9px;margin-top:5px}.v8-file-input{position:fixed;left:-9999px;width:1px;height:1px;opacity:0}
   .v8-upload-preview{display:none;width:100%;max-height:42vh;object-fit:contain;background:#070808;border:1px solid var(--line);border-radius:15px;margin-bottom:12px}.v8-upload-preview.ready{display:block}
   .v8-upload-note{font-size:9px;color:var(--muted);line-height:1.7;background:#111313;border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin:10px 0}.v8-upload-actions{display:grid;grid-template-columns:1.3fr .7fr;gap:8px}.v8-upload-actions button{width:100%}
 
@@ -267,7 +267,7 @@ function galleryView(cat=state.gallery){
     <div class="v8-gallery-count"><b id="galleryCount">${items.length}</b><small>وێنە</small></div>
   </section>
 
-  <button class="btn primary v8-gallery-add" onclick="addPhotoModal()"><span>＋</span><b>وێنە زیاد بکە</b><small>لە مۆبایل یان کامێراوە</small></button>
+  <button type="button" id="galleryAddButton" data-gallery-action="add" class="btn primary v8-gallery-add"><span>＋</span><b>وێنە زیاد بکە</b><small>لە مۆبایل یان کامێراوە</small></button>
 
   <div class="v8-gallery-search">
     <span>⌕</span>
@@ -319,7 +319,8 @@ function addPhotoModal(){
   pendingGalleryPhoto=null;
   M.innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="modal-card">
     <div class="modal-head"><div><span class="v8-modal-badge">وێنەی نوێ</span><b>زیادکردنی وێنە بۆ کاتالۆگ</b></div><button onclick="closeModal()">×</button></div>
-    <label class="v8-upload-picker" for="galleryPhotoInput"><span>＋</span><b>وێنە هەڵبژێرە</b><small>لە گەلەری یان کامێرای مۆبایلەکەت</small><input id="galleryPhotoInput" type="file" accept="image/*" onchange="previewGalleryPhoto(this)"></label>
+    <button type="button" class="v8-upload-picker" data-gallery-action="pick"><span>＋</span><b>وێنە هەڵبژێرە</b><small>لە گەلەری یان کامێرای مۆبایلەکەت</small></button>
+    <input id="galleryPhotoInput" class="v8-file-input" type="file" accept="image/*">
     <img id="galleryPhotoPreview" class="v8-upload-preview" alt="پێشبینینی وێنە">
     <div class="form-grid">
       <div class="field"><label>ناوی کوردی *</label><input id="galleryPhotoKu" placeholder="نموونە: تیری ئاراستەی ڕاست"></div>
@@ -329,6 +330,12 @@ function addPhotoModal(){
     <div class="v8-upload-note">وێنەکە بچووک دەکرێتەوە و لەسەر هەمان ئامێرەکەت پارێزراو دەبێت؛ لە کاتی Offline ـیش بەردەستە.</div>
     <div class="v8-upload-actions"><button id="galleryPhotoSave" class="btn primary" onclick="saveGalleryPhoto()">هەڵگرتنی وێنە</button><button class="btn" onclick="closeModal()">پاشگەزبوونەوە</button></div>
   </div></div>`
+}
+function openGalleryPhotoPicker(){
+  const input=$('#galleryPhotoInput');
+  if(!input){toast('تکایە دووبارە هەوڵ بدەرەوە');return}
+  input.value='';
+  input.click()
 }
 function fileToGalleryDataURL(file){
   return new Promise((resolve,reject)=>{
@@ -498,5 +505,13 @@ async function sendManagerRequest(){
 function settingsModal(){let theme=S.get('theme','dark'),font=S.get('font',1),lh=S.get('lh',1.95);M.innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="modal-card"><div class="modal-head"><b>ڕێکخستنەکان</b><button onclick="closeModal()">×</button></div><div class="settings-row"><span>ڕووکار</span><div class="switch"><button class="${theme==='dark'?'active':''}" onclick="S.set('theme','dark');applySettings();settingsModal()">Dark</button><button class="${theme==='light'?'active':''}" onclick="S.set('theme','light');applySettings();settingsModal()">Light</button></div></div><div class="settings-row"><span>قەبارەی نووسین</span><div class="switch"><button onclick="setFont(-.08)">A−</button><button>${font.toFixed(2)}</button><button onclick="setFont(.08)">A+</button></div></div><div class="settings-row"><span>دووری نێوان دێڕەکان</span><div class="switch"><button onclick="setLH(-.1)">−</button><button>${lh.toFixed(2)}</button><button onclick="setLH(.1)">+</button></div></div><div class="settings-row"><span>دامەزراندنی ئەپ</span><button class="btn primary small" onclick="installApp()">Install</button></div><div class="settings-row"><span>پاککردنەوەی Notes / Progress</span><button class="btn danger small" onclick="resetAppData()">Reset</button></div></div></div>`}
 function setFont(d){S.set('font',Math.max(.8,Math.min(1.45,S.get('font',1)+d)));applySettings();settingsModal()}function setLH(d){S.set('lh',Math.max(1.5,Math.min(2.4,S.get('lh',1.95)+d)));applySettings();settingsModal()}function resetAppData(){if(confirm('هەموو Progress، Favorites، Notes و Project data بسڕدرێنەوە؟')){Object.keys(localStorage).filter(k=>k.startsWith('ks_')).forEach(k=>localStorage.removeItem(k));applySettings();closeModal();home();toast('Data reset')}}
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();state.installPrompt=e;$('#installTop').style.display='block'});async function installApp(){if(state.installPrompt){state.installPrompt.prompt();await state.installPrompt.userChoice;state.installPrompt=null}else{toast('لە Chrome: Menu → Add to Home screen / Install app')}}
+document.addEventListener('click',event=>{
+  const action=event.target.closest('[data-gallery-action]')?.dataset.galleryAction;
+  if(action==='add'){event.preventDefault();addPhotoModal()}
+  if(action==='pick'){event.preventDefault();openGalleryPhotoPicker()}
+});
+document.addEventListener('change',event=>{
+  if(event.target?.id==='galleryPhotoInput')previewGalleryPhoto(event.target)
+});
 injectManagerNav();$$('.bottom-nav button').forEach(b=>b.onclick=()=>({home,book:bookView,gallery:galleryView,tools:toolsView,search:searchView,manager:managerView}[b.dataset.view]||home)());$$('[data-action="home"]').forEach(b=>b.onclick=home);$$('[data-action="settings"]').forEach(b=>b.onclick=settingsModal);$$('[data-action="install"]').forEach(b=>b.onclick=installApp);
 if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register('service-worker.js').catch(()=>{});home();loadCustomGallery();
