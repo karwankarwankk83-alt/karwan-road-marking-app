@@ -5,12 +5,29 @@ module.exports=async function handler(req,res){
   try{
     const messages=Array.isArray(req.body?.messages)?req.body.messages:[];
     const clean=messages.slice(-12).map(m=>({role:m.role==='assistant'?'assistant':'user',content:String(m.content||'').slice(0,4000)}));
-    const key=process.env.OPENAI_API_KEY;
-    if(!key)return res.status(503).json({error:'OPENAI_API_KEY is not configured'});
-    const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${key}`},body:JSON.stringify({model:process.env.OPENAI_MODEL||'gpt-5-mini',instructions:SYSTEM,input:clean,max_output_tokens:700})});
+
+    // On Vercel, OIDC is provided automatically. Locally, AI_GATEWAY_API_KEY can be used.
+    const token=process.env.AI_GATEWAY_API_KEY||process.env.VERCEL_OIDC_TOKEN;
+    if(!token)return res.status(503).json({error:'AI Gateway authentication is not available'});
+
+    const response=await fetch('https://ai-gateway.vercel.sh/v1/chat/completions',{
+      method:'POST',
+      headers:{'content-type':'application/json','authorization':`Bearer ${token}`},
+      body:JSON.stringify({
+        model:process.env.AI_MODEL||'openai/gpt-5.6-luna',
+        messages:[{role:'system',content:SYSTEM},...clean],
+        max_tokens:700,
+        temperature:0.3
+      })
+    });
+
     const data=await response.json();
-    if(!response.ok)throw new Error(data?.error?.message||'OpenAI request failed');
-    const text=data.output_text||data.output?.flatMap(x=>x.content||[]).find(x=>x.type==='output_text')?.text||'';
+    if(!response.ok)throw new Error(data?.error?.message||'AI Gateway request failed');
+    const text=data?.choices?.[0]?.message?.content||'';
+    if(!text)throw new Error('AI Gateway returned an empty response');
     return res.status(200).json({text});
-  }catch(error){console.error(error);return res.status(500).json({error:'Assistant request failed'})}
+  }catch(error){
+    console.error('KS assistant error:',error);
+    return res.status(500).json({error:'Assistant request failed'});
+  }
 };
