@@ -8,8 +8,8 @@ const PAINT={
  twoK:{name:'بۆیاخی دوو کۆمپۆنێت',rate:.60,beads:.35,pack:20}
 };
 const SURFACE={
- smooth:{name:'ئاسفاڵتی نوێ و نەرم',factor:1},
- rough:{name:'ئاسفاڵتی کۆن و زبر',factor:1.10},
+ smooth:{name:'قیری نوێ و ساف',factor:1},
+ rough:{name:'قیری کۆن و زبر',factor:1.10},
  concrete:{name:'کۆنکریت',factor:1.08},
  pavers:{name:'کەلەبستۆن',factor:1.20}
 };
