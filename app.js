@@ -226,6 +226,7 @@ function home(){
     <button onclick="toolsView('standards')"><i>§</i><b>ستانداردەکان</b><small>EN / Iraqi</small></button>
     <button onclick="searchView()"><i>⌕</i><b>گەڕان</b><small>لە کتێبەکەدا</small></button>
     <button onclick="toolsView('project')"><i>Σ</i><b>پڕۆژە</b><small>کۆی ماددە</small></button>
+    <button onclick="markingDesignerView()"><i>⌗</i><b>دروستکەری هێما</b><small>DTCDM / پێوانە</small></button>
     <button onclick="managerView()"><i>✦</i><b>کاروان</b><small>بەڕێوەبەری ئەپ</small></button>
   </div>
 
