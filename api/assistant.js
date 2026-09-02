@@ -5,8 +5,6 @@ module.exports=async function handler(req,res){
   try{
     const messages=Array.isArray(req.body?.messages)?req.body.messages:[];
     const clean=messages.slice(-12).map(m=>({role:m.role==='assistant'?'assistant':'user',content:String(m.content||'').slice(0,4000)}));
-
-    // On Vercel, OIDC is provided automatically. Locally, AI_GATEWAY_API_KEY can be used.
     const token=process.env.AI_GATEWAY_API_KEY||process.env.VERCEL_OIDC_TOKEN;
     if(!token)return res.status(503).json({error:'AI Gateway authentication is not available'});
 
@@ -14,15 +12,20 @@ module.exports=async function handler(req,res){
       method:'POST',
       headers:{'content-type':'application/json','authorization':`Bearer ${token}`},
       body:JSON.stringify({
-        model:process.env.AI_MODEL||'openai/gpt-5.6-luna',
+        model:process.env.AI_MODEL||'openai/gpt-5.4',
         messages:[{role:'system',content:SYSTEM},...clean],
         max_tokens:700,
         temperature:0.3
       })
     });
 
-    const data=await response.json();
-    if(!response.ok)throw new Error(data?.error?.message||'AI Gateway request failed');
+    const raw=await response.text();
+    let data={};
+    try{data=JSON.parse(raw)}catch{}
+    if(!response.ok){
+      console.error('AI Gateway error',response.status,raw.slice(0,1000));
+      return res.status(502).json({error:'AI Gateway request failed'});
+    }
     const text=data?.choices?.[0]?.message?.content||'';
     if(!text)throw new Error('AI Gateway returned an empty response');
     return res.status(200).json({text});
