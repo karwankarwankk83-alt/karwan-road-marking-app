@@ -41,27 +41,28 @@ const templates={
 let active='stop';
 const num=id=>Math.max(0,Number($('#'+id)?.value)||0);
 function arrowSvg(t){const flip=t.dir==='left'?'scale(-1 1)':'';if(t.dir==='up')return `<g><path d="M50 8 L22 40 H40 V92 H60 V40 H78 Z"/></g>`;if(t.dir==='straightRight'||t.dir==='straightLeft')return `<g transform="${t.dir==='straightLeft'?'scale(-1 1) translate(-100 0)':''}"><path d="M45 8L25 32h12v60h18V56h12v14l25-25-25-25v14H55V32h12Z"/></g>`;if(t.dir==='leftRight')return `<g><path d="M8 45l25-25v15h34V20l25 25-25 25V55H33v15Z"/></g>`;if(t.dir==='uturn'||t.dir==='straightUturn')return `<g><path d="M72 92V45c0-28-44-28-44 0v12H15l22 24 22-24H46V45c0-7 8-7 8 0v47Z"/></g>`;return `<g transform="${flip}"><path d="M18 32 H58 V14 L92 50 L58 86 V68 H18 Z"/></g>`}
-function stopMetrics(w,h){return {letter:w/5,gap:w/15,stroke:w/12,rows:Math.max(1,Math.round(h/.2)),cols:Math.max(1,Math.round(w/.2))}}
+function textMetrics(t,w,h){const count=Math.max(1,[...String(t.text||'')].filter(x=>x.trim()).length),letter=w/(count+(count-1)/3),gap=count>1?letter/3:0,stroke=letter/4,cell=(Math.abs(w*10-Math.round(w*10))<.001&&Math.abs(h*10-Math.round(h*10))<.001)?.1:.05;return {count,letter,gap,stroke,cell,rows:Math.max(1,Math.round(h/cell)),cols:Math.max(1,Math.round(w/cell))}}
 function drawing(t,w,h){
  let body='';
  if(t.kind==='zebra'){const count=Math.max(1,Math.floor(w/(t.stripe||.5)));for(let i=0;i<count;i+=2){const x=15+i*(270/count);body+=`<rect x="${x}" y="20" width="${270/count}" height="230" rx="2"/>`}}
  else if(t.kind==='disabled')body='<text x="150" y="190" text-anchor="middle" font-size="150">♿</text>';
  else if(t.kind==='arrow')body=`<g transform="translate(70 20) scale(1.6 2.3)">${arrowSvg(t)}</g>`;
- else body=`<text x="150" y="155" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="${String(t.text).length>6?45:75}">${t.text}</text>`;
+ else body=`<text x="35" y="196" textLength="230" lengthAdjust="spacingAndGlyphs" font-family="DejaVu Sans Mono,monospace" font-weight="900" font-size="170">${t.text}</text>`;
  const arrowDims=t.kind==='arrow'?`<g stroke="#58d68d" stroke-width="1.5" fill="none"><path d="M126 225h48M126 220v10M174 220v10"/><path d="M196 24v92M191 24h10M191 116h10"/></g><g fill="#58d68d" font-size="10" font-family="Arial"><text x="150" y="218" text-anchor="middle">کلک 30 cm</text><text x="207" y="72" transform="rotate(90 207 72)" text-anchor="middle">${t.dir==='up'?'سەر 2.05 m':'تا سووڕانەوە 2.50 m'}</text></g>`:'';
  let textDims='';
- if(active==='stop'){
-  const m=stopMetrics(w,h),gx=230/m.cols,gy=210/m.rows;
+ if(t.kind==='text'){
+  const m=textMetrics(t,w,h),gx=230/m.cols,gy=210/m.rows,part=230/(m.count+(m.count-1)/3);
   let grid='';for(let i=0;i<=m.cols;i++)grid+=`<path d="M${35+i*gx} 30V240"/>`;for(let i=0;i<=m.rows;i++)grid+=`<path d="M35 ${30+i*gy}H265"/>`;
-  textDims=`<g stroke="#59615d" stroke-width=".55" opacity=".75">${grid}</g><g stroke="#58d68d" stroke-width="1.5" fill="none"><path d="M48 21H94M48 17v8M94 17v8"/><path d="M94 21h15M94 17v8M109 17v8"/></g><g fill="#58d68d" font-size="8" font-family="Arial"><text x="71" y="14" text-anchor="middle">${Math.round(m.letter*100)} cm</text><text x="102" y="14" text-anchor="middle">${Math.round(m.gap*100)} cm</text><text x="150" y="254" text-anchor="middle">هەر خانە نزیکەی 20 cm × 20 cm</text></g>`;
+  let top='',x=35;for(let i=0;i<m.count;i++){top+=`<path d="M${x} 21h${part}M${x} 17v8M${x+part} 17v8"/><text x="${x+part/2}" y="14" text-anchor="middle">${Math.round(m.letter*100)} cm</text>`;x+=part;if(i<m.count-1){const g=part/3;top+=`<path d="M${x} 21h${g}M${x} 17v8M${x+g} 17v8"/><text x="${x+g/2}" y="28" text-anchor="middle">${Math.round(m.gap*100)} cm</text>`;x+=g}}
+  textDims=`<g stroke="#59615d" stroke-width=".55" opacity=".72" fill="none">${grid}</g><g stroke="#58d68d" stroke-width="1.3" fill="none">${top.replace(/<text[\s\S]*?<\/text>/g,'')}</g><g fill="#58d68d" font-size="7.5" font-family="Arial">${top.match(/<text[\s\S]*?<\/text>/g)?.join('')||''}<text x="150" y="254" text-anchor="middle">گرید ${Math.round(m.cell*100)} cm × ${Math.round(m.cell*100)} cm</text></g>`;
  }
  return `<svg id="mdSvg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="300" rx="18" fill="#202322"/>${textDims}<g fill="#fff">${body}</g>${arrowDims}<g stroke="#f4c400" stroke-width="2" fill="none"><path d="M15 275H285M15 269v12M285 269v12"/><path d="M8 20V250M2 20h12M2 250h12"/></g><g fill="#f4c400" font-size="13" font-family="Arial"><text x="150" y="294" text-anchor="middle">پانی ${w.toFixed(2)} m</text><text x="10" y="140" text-anchor="middle" transform="rotate(-90 10 140)">درێژی ${h.toFixed(2)} m</text></g></svg>`;
 }
 function speedPreset(t,speed){if(!t.speedBased)return;if(t.kind==='arrow'){t.h=speed<40?2.5:speed>=120?7.5:5}else if(t.kind==='text'){t.h=speed<60?1.6:speed<=100?2.8:4.5}}
 function renderResult(){
  const t=templates[active],w=num('mdW'),h=num('mdH'),speed=num('mdSpeed');
- const sm=active==='stop'?stopMetrics(w,h):null;
- const stopDetail=sm?[["پانی هەر پیت",`${Math.round(sm.letter*100)} cm`],["بۆشایی نێوان پیت",`${Math.round(sm.gap*100)} cm`],["ئەستوری هێڵی پیت",`${Math.round(sm.stroke*100)} cm`],["گریدی زەرعکردن","20 cm × 20 cm"]]:[];
+ const sm=t.kind==='text'?textMetrics(t,w,h):null;
+ const stopDetail=sm?[["پانی هەر ژمارە/پیت",`${Math.round(sm.letter*100)} cm`],["بۆشایی نێوانیان",`${Math.round(sm.gap*100)} cm`],["ئەستوری هێڵی بۆیاخ",`${Math.round(sm.stroke*100)} cm`],["گریدی زەرعکردن",`${Math.round(sm.cell*100)} cm × ${Math.round(sm.cell*100)} cm`]]:[];
  const detail=[...(t.details||[]),...stopDetail].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
  const stripe=t.kind==='zebra'?`<div><span>پانی هەر هێڵ</span><b>${((t.stripe||.5)*100).toFixed(0)} cm</b></div>`:'';
  $('#mdResult').innerHTML=`<div class="md-preview">${drawing(t,w,h)}</div><div class="md-data"><h3>${t.name}</h3><div class="md-measures"><div><span>پانی گشتی</span><b>${w.toFixed(2)} m</b></div><div><span>درێژی گشتی</span><b>${h.toFixed(2)} m</b></div>${stripe}${detail}<div><span>خێرایی</span><b>${speed.toFixed(0)} km/h</b></div></div><p>${t.note}</p><p class="md-source">DTCDM 2nd Edition (2015), Volume 2 — Chapter 6</p><button class="md-download" onclick="downloadMarkingSvg()">⇩ دابەزاندنی نەخشە SVG</button></div>`;
