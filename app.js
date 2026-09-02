@@ -135,7 +135,7 @@ function applySettings(){let theme=S.get('theme','dark'),fs=S.get('font',1),lh=S
   .v8-photo-modal .modal-head>div{min-width:0}.v8-photo-modal .modal-head b{display:block;font-size:14px;margin-top:6px}.v8-photo-modal .modal-head small{display:block;color:var(--muted);font-size:9px;direction:ltr;margin-top:3px}
   .v8-modal-badge{display:inline-block;background:#272300;color:var(--yellow);border:1px solid #4d4306;border-radius:999px;padding:4px 7px;font-size:8px}
   .v8-modal-nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:10px}.v8-modal-nav button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:11px;padding:9px;font-size:10px}.v8-modal-nav span{font-size:9px;color:var(--muted);direction:ltr}
-  .v8-upload-picker{display:block;width:100%;color:var(--text);font-family:inherit;border:2px dashed #625616;background:#13150f;border-radius:17px;padding:18px;text-align:center;cursor:pointer;margin-bottom:12px}.v8-upload-picker span{display:grid;place-items:center;width:46px;height:46px;margin:0 auto 9px;border-radius:14px;background:var(--yellow);color:#111;font-size:25px}.v8-upload-picker b{display:block;font-size:13px}.v8-upload-picker small{display:block;color:var(--muted);font-size:9px;margin-top:5px}.v8-file-input{position:fixed;left:-9999px;width:1px;height:1px;opacity:0}
+  .v8-upload-picker{display:block;width:100%;color:var(--text);font-family:inherit;border:2px dashed #625616;background:#13150f;border-radius:17px;padding:18px;text-align:center;cursor:pointer;margin-bottom:8px}.v8-upload-source{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.v8-upload-source button{min-height:48px;border:1px solid var(--line);border-radius:13px;background:#1a1c1b;color:var(--text);font:inherit;font-weight:800}.v8-upload-source button:first-child{background:var(--yellow);color:#111}.v8-upload-picker span{display:grid;place-items:center;width:46px;height:46px;margin:0 auto 9px;border-radius:14px;background:var(--yellow);color:#111;font-size:25px}.v8-upload-picker b{display:block;font-size:13px}.v8-upload-picker small{display:block;color:var(--muted);font-size:9px;margin-top:5px}.v8-file-input{position:fixed;left:-9999px;width:1px;height:1px;opacity:0}
   .v8-upload-preview{display:none;width:100%;max-height:42vh;object-fit:contain;background:#070808;border:1px solid var(--line);border-radius:15px;margin-bottom:12px}.v8-upload-preview.ready{display:block}
   .v8-upload-note{font-size:9px;color:var(--muted);line-height:1.7;background:#111313;border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin:10px 0}.v8-upload-actions{display:grid;grid-template-columns:1.3fr .7fr;gap:8px}.v8-upload-actions button{width:100%}
 
@@ -319,8 +319,9 @@ function addPhotoModal(){
   pendingGalleryPhoto=null;
   M.innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="modal-card">
     <div class="modal-head"><div><span class="v8-modal-badge">وێنەی نوێ</span><b>زیادکردنی وێنە بۆ کاتالۆگ</b></div><button onclick="closeModal()">×</button></div>
-    <input id="galleryPhotoInput" class="v8-file-input" type="file" accept="image/*">
-    <label for="galleryPhotoInput" class="v8-upload-picker"><span>＋</span><b>وێنە هەڵبژێرە</b><small>لە گەلەری یان کامێرای مۆبایلەکەت</small></label>
+    <input id="galleryPhotoInput" class="v8-file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/*" onchange="previewGalleryPhoto(this)">
+    <div class="v8-upload-picker"><span>＋</span><b>وێنە زیاد بکە</b><small>سەرچاوەی وێنەکە هەڵبژێرە</small></div>
+    <div class="v8-upload-source"><button type="button" onclick="openGalleryPhotoPicker('gallery')">▧ گەلەری مۆبایل</button><button type="button" onclick="openGalleryPhotoPicker('camera')">◉ کامێرا</button></div>
     <img id="galleryPhotoPreview" class="v8-upload-preview" alt="پێشبینینی وێنە">
     <div class="form-grid">
       <div class="field"><label>ناوی کوردی *</label><input id="galleryPhotoKu" placeholder="نموونە: تیری ئاراستەی ڕاست"></div>
@@ -331,15 +332,16 @@ function addPhotoModal(){
     <div class="v8-upload-actions"><button id="galleryPhotoSave" class="btn primary" onclick="saveGalleryPhoto()">هەڵگرتنی وێنە</button><button class="btn" onclick="closeModal()">پاشگەزبوونەوە</button></div>
   </div></div>`
 }
-function openGalleryPhotoPicker(){
+function openGalleryPhotoPicker(source='gallery'){
   const input=$('#galleryPhotoInput');
   if(!input){toast('تکایە دووبارە هەوڵ بدەرەوە');return}
   input.value='';
-  input.click()
+  if(source==='camera')input.setAttribute('capture','environment');else input.removeAttribute('capture');
+  setTimeout(()=>input.click(),0)
 }
 function fileToGalleryDataURL(file){
   return new Promise((resolve,reject)=>{
-    if(!file||!file.type.startsWith('image/')){reject(new Error('invalid-type'));return}
+    if(!file||(!file.type.startsWith('image/')&&!/\.(jpe?g|png|webp|gif)$/i.test(file.name||''))){reject(new Error('invalid-type'));return}
     if(file.size>20*1024*1024){reject(new Error('too-large'));return}
     const reader=new FileReader();
     reader.onerror=()=>reject(new Error('read-failed'));
@@ -347,11 +349,11 @@ function fileToGalleryDataURL(file){
       const image=new Image();
       image.onerror=()=>reject(new Error('decode-failed'));
       image.onload=()=>{
-        const maxSide=1600,scale=Math.min(1,maxSide/Math.max(image.naturalWidth,image.naturalHeight));
+        const maxSide=1280,scale=Math.min(1,maxSide/Math.max(image.naturalWidth,image.naturalHeight));
         const width=Math.max(1,Math.round(image.naturalWidth*scale)),height=Math.max(1,Math.round(image.naturalHeight*scale));
         const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
         const ctx=canvas.getContext('2d');ctx.fillStyle='#111';ctx.fillRect(0,0,width,height);ctx.drawImage(image,0,0,width,height);
-        try{resolve(canvas.toDataURL('image/jpeg',.84))}catch(error){reject(error)}
+        try{resolve(canvas.toDataURL('image/jpeg',.78))}catch(error){reject(error)}
       };
       image.src=reader.result
     };
