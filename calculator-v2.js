@@ -1,11 +1,11 @@
 /* KS Calculator v3 — simple Kurdish-first field workflow */
 (function(){
 const PAINT={
- thermo:{name:'سێرمۆ',rate:4,beads:.45,pack:25},
- cold:{name:'بۆیاخی سارد ئەکریلیک',rate:.60,beads:.35,pack:20},
- water:{name:'ئەکریلیکی بنەمای ئاو',rate:.60,beads:.35,pack:20},
- mma:{name:'پلاستیکی سارد / MMA',rate:3,beads:.45,pack:25},
- twoK:{name:'بۆیاخی دوو کۆمپۆنێت',rate:.60,beads:.35,pack:20}
+ thermo:{name:'سێرمۆ',thickness:2,density:2,beads:.45,pack:25},
+ cold:{name:'بۆیاخی سارد ئەکریلیک',thickness:.4,density:1.5,beads:.35,pack:20},
+ water:{name:'ئەکریلیکی بنەمای ئاو',thickness:.4,density:1.5,beads:.35,pack:20},
+ mma:{name:'پلاستیکی سارد / MMA',thickness:2,density:1.5,beads:.45,pack:25},
+ twoK:{name:'بۆیاخی دوو کۆمپۆنێت',thickness:.4,density:1.5,beads:.35,pack:20}
 };
 const SURFACE={
  smooth:{name:'قیری نوێ و ساف',factor:1},
@@ -21,7 +21,8 @@ const surfaceSelect=()=>`<label class="c3-field"><span>ڕووی شەقام</span
 function settings(){
  const p=PAINT[$('#cPaint')?.value]||PAINT.thermo;
  return `<details class="c3-advanced"><summary>ڕێکخستنی ورد</summary><div class="c3-grid">
- ${input('ڕێژەی بۆیاخ','cRate',p.rate,'kg/m²')}
+ ${input('ئەستووری/بەرزی بۆیاخ','cThickness',p.thickness,'mm','.1')}
+ ${input('چڕی ماددە','cDensity',p.density,'kg/L','.01')}
  ${input('دانی شووشەیی','cBeads',p.beads,'kg/m²')}
  ${input('زیادەی کار','cWaste',5,'%','.5')}
  ${input('قەبارەی کیسە/قوطی','cPack',p.pack,'kg','1')}
@@ -30,17 +31,18 @@ function settings(){
 function shell(title,help,fields){
  return `<div class="c3-top"><button class="c3-back" type="button" onclick="calcTool()">‹ گەڕانەوە</button><div><b>${title}</b><small>${help}</small></div></div><div class="c3-form"><div class="c3-grid">${fields}</div>${settings()}</div><div id="c3Results" class="c3-results"></div>`;
 }
-function result(area,paint,beads,extra=''){
+function result(area,paint,beads,extra='',volume=0,rate=0){
  const pack=n('cPack')||25, packs=Math.ceil(paint/pack);
- $('#c3Results').innerHTML=`<h3>ئەنجامی خەمڵاندن</h3><div class="c3-main-result"><span>بۆیاخی پێویست</span><strong>${paint.toFixed(2)}</strong><b>kg</b></div><div class="c3-result-grid"><div><span>ڕووبەر</span><b>${area.toFixed(2)} m²</b></div><div><span>دانی شووشەیی</span><b>${beads.toFixed(2)} kg</b></div><div><span>کیسە/قوطی ${pack} kg</span><b>${packs} دانە</b></div>${extra}</div><p>ئەنجامەکە زیادەی کاری ${n('cWaste').toFixed(1)}% لەخۆ دەگرێت.</p>`;
+ $('#c3Results').innerHTML=`<h3>ئەنجامی خەمڵاندن</h3><div class="c3-main-result"><span>بۆیاخی پێویست</span><strong>${paint.toFixed(2)}</strong><b>kg</b></div><div class="c3-result-grid"><div><span>ڕووبەر</span><b>${area.toFixed(2)} m²</b></div><div><span>دانی شووشەیی</span><b>${beads.toFixed(2)} kg</b></div><div><span>کیسە/قوطی ${pack} kg</span><b>${packs} دانە</b></div><div><span>حەجمی بۆیاخ</span><b>${volume.toFixed(2)} L</b></div><div><span>نرخی کاریگەر</span><b>${rate.toFixed(2)} kg/m²</b></div>${extra}</div><p>ئەنجامەکە زیادەی کاری ${n('cWaste').toFixed(1)}% لەخۆ دەگرێت.</p>`;
 }
 function values(area){
  const p=PAINT[$('#cPaint').value],s=SURFACE[$('#cSurface').value],w=1+n('cWaste')/100;
- return {paint:area*n('cRate')*s.factor*w,beads:area*n('cBeads')*w,p,s};
+ const thickness=n('cThickness'),density=n('cDensity'),volume=area*thickness,rate=thickness*density*s.factor;
+ return {paint:volume*density*s.factor*w,beads:area*n('cBeads')*w,volume,rate,p,s};
 }
 function bind(calc){
  ['input','change'].forEach(ev=>$('#calcBody').addEventListener(ev,e=>{
-  if(e.target.id==='cPaint'){const p=PAINT[e.target.value];$('#cRate').value=p.rate;$('#cBeads').value=p.beads;$('#cPack').value=p.pack}
+  if(e.target.id==='cPaint'){const p=PAINT[e.target.value];$('#cThickness').value=p.thickness;$('#cDensity').value=p.density;$('#cBeads').value=p.beads;$('#cPack').value=p.pack}
   calc();
  }));
  calc();
@@ -63,18 +65,18 @@ window.renderCalc=function(type){
   ${input('کۆی درێژی','lineLength',1000,'m','1')}${input('پانی هێڵ','lineWidth',15,'cm','.1')}
   <div id="brokenFields" class="c3-subgrid" hidden>${input('درێژی بەشی بۆیاخکراو','markLength',3,'m','.1')}${input('بۆشایی نێوانیان','gapLength',9,'m','.1')}</div>
   ${paintSelect()}${surfaceSelect()}`);
-  bind(()=>{const broken=$('#lineKind').value==='broken';$('#brokenFields').hidden=!broken;const L=n('lineLength'),mark=n('markLength'),gap=n('gapLength'),cycle=mark+gap;let painted=L;if(broken)painted=cycle?Math.floor(L/cycle)*mark+Math.min(L%cycle,mark):0;const area=painted*n('lineWidth')/100,v=values(area);result(area,v.paint,v.beads,broken?`<div><span>درێژی بۆیاخکراو</span><b>${painted.toFixed(2)} m</b></div>`:'')});return;
+  bind(()=>{const broken=$('#lineKind').value==='broken';$('#brokenFields').hidden=!broken;const L=n('lineLength'),mark=n('markLength'),gap=n('gapLength'),cycle=mark+gap;let painted=L;if(broken)painted=cycle?Math.floor(L/cycle)*mark+Math.min(L%cycle,mark):0;const area=painted*n('lineWidth')/100,v=values(area);result(area,v.paint,v.beads,broken?`<div><span>درێژی بۆیاخکراو</span><b>${painted.toFixed(2)} m</b></div>`:'',v.volume,v.rate)});return;
  }
  if(type==='zebra'){
   c.innerHTML=shell('زێبرا و نیشانە','ژمارە و پێوانەی هەر بەش داخڵ بکە',`
   ${input('ژمارەی هێڵ/بەش','stripeCount',8,'دانە','1')}${input('درێژی هەر بەش','stripeLength',4,'m','.01')}${input('پانی هەر بەش','stripeWidth',.5,'m','.01')}
   ${paintSelect()}${surfaceSelect()}`);
-  bind(()=>{const area=n('stripeCount')*n('stripeLength')*n('stripeWidth'),v=values(area);result(area,v.paint,v.beads)});return;
+  bind(()=>{const area=n('stripeCount')*n('stripeLength')*n('stripeWidth'),v=values(area);result(area,v.paint,v.beads,'',v.volume,v.rate)});return;
  }
  if(type==='area'){
   c.innerHTML=shell('ڕووبەر و بڕی بۆیاخ','ڕووبەری کارەکە بە m² بنووسە',`
   ${input('ڕووبەری کار','workArea',100,'m²','1')}${paintSelect()}${surfaceSelect()}`);
-  bind(()=>{const area=n('workArea'),v=values(area);result(area,v.paint,v.beads)});return;
+  bind(()=>{const area=n('workArea'),v=values(area);result(area,v.paint,v.beads,'',v.volume,v.rate)});return;
  }
  c.innerHTML=`<div class="c3-top"><button class="c3-back" type="button" onclick="calcTool()">‹ گەڕانەوە</button><div><b>تێکەڵکردنی 2K</b><small>ڕێژەکە لە TDS وەربگرە</small></div></div><div class="c3-form"><div class="c3-grid">${input('کۆی تێکەڵ','mixTotal',100,'kg','.1')}${input('بەشی ماددەی بنەڕەت','basePart',98,'بەش','.1')}${input('بەشی هاردنەر','hardPart',2,'بەش','.1')}</div></div><div id="c3Results" class="c3-results"></div>`;
  bind(()=>{const total=n('mixTotal'),base=n('basePart'),hard=n('hardPart'),sum=base+hard,b=sum?total*base/sum:0,h=sum?total*hard/sum:0;$('#c3Results').innerHTML=`<h3>ئەنجامی تێکەڵ</h3><div class="c3-main-result"><span>ماددەی بنەڕەت</span><strong>${b.toFixed(2)}</strong><b>kg</b></div><div class="c3-result-grid"><div><span>هاردنەر</span><b>${h.toFixed(2)} kg</b></div><div><span>کۆی تێکەڵ</span><b>${total.toFixed(2)} kg</b></div></div><p>پێش تێکەڵکردن ڕێژەی TDS ـی بەرهەمەکەت دڵنیا بکەرەوە.</p>`});
