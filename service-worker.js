@@ -1,6 +1,6 @@
-const CACHE='ks-roadmark-v13';
+const CACHE='ks-roadmark-v14';
 const CORE=[
-  './','./index.html','./styles.css','./app.js','./book-data.js',
+  './','./index.html','./styles.css','./app.js','./assistant.js','./book-data.js',
   './gallery-data.js','./manifest.json','./icon-192.png','./icon-512.png'
 ];
 
@@ -22,7 +22,7 @@ self.addEventListener('fetch',event=>{
   const url=new URL(event.request.url);
   if(url.origin!==location.origin)return;
 
-  const dynamic=['/app.js','/styles.css','/book-data.js','/gallery-data.js','/manifest.json'];
+  const dynamic=['/app.js','/assistant.js','/styles.css','/book-data.js','/gallery-data.js','/manifest.json'];
   const isDynamic=dynamic.some(x=>url.pathname.endsWith(x));
 
   if(event.request.mode==='navigate' || isDynamic){
