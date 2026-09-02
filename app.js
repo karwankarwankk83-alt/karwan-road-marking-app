@@ -1,9 +1,47 @@
 
 const B=window.BOOK_DATA;
 const FALLBACK_GALLERY=[{"id":7,"en":"Yield Triangle","ku":"مثلثی پێش دەست","category":"Give Way","src":"assets/photos/photo_07.jpg"},{"id":8,"en":"Straight + Turn Arrow","ku":"تیری ڕاست + پێچ","category":"Arrows","src":"assets/photos/photo_08.jpg"},{"id":9,"en":"Yellow Box","ku":"ناوچەی زەرد","category":"Special","src":"assets/photos/photo_09.jpg"},{"id":10,"en":"Three-Direction Arrow","ku":"تیری سێ ئاراستە","category":"Arrows","src":"assets/photos/photo_10.jpg"},{"id":12,"en":"Exit Arrow","ku":"تیری دەرچوون","category":"Arrows","src":"assets/photos/photo_12.jpg"},{"id":13,"en":"Lane Drop Arrow","ku":"تیری کەمبوونەوەی ڕێڕەو","category":"Arrows","src":"assets/photos/photo_13.jpg"},{"id":15,"en":"Chevron","ku":"Chevron","category":"Special","src":"assets/photos/photo_15.jpg"},{"id":16,"en":"Hatched Area","ku":"ناوچەی هاشوورکراو","category":"Special","src":"assets/photos/photo_16.jpg"},{"id":17,"en":"Painted Island","ku":"دوورگەی بۆیاخکراو","category":"Special","src":"assets/photos/photo_17.jpg"},{"id":19,"en":"Parking Bay","ku":"شوێنی پارککردن","category":"Parking","src":"assets/photos/photo_19.jpg"},{"id":20,"en":"Accessible Parking","ku":"پارکینگی تایبەت","category":"Parking","src":"assets/photos/photo_20.jpg"},{"id":21,"en":"Bicycle Symbol","ku":"نیشانەی پاسکیل","category":"Symbols","src":"assets/photos/photo_21.jpg"},{"id":22,"en":"SLOW","ku":"SLOW","category":"Words","src":"assets/photos/photo_22.jpg"},{"id":23,"en":"BUS","ku":"BUS","category":"Words","src":"assets/photos/photo_23.jpg"},{"id":24,"en":"TAXI","ku":"TAXI","category":"Words","src":"assets/photos/photo_24.jpg"},{"id":25,"en":"KEEP CLEAR","ku":"KEEP CLEAR","category":"Words","src":"assets/photos/photo_25.jpg"}];
-const G=Array.isArray(window.GALLERY_DATA)&&window.GALLERY_DATA.length?window.GALLERY_DATA:FALLBACK_GALLERY,V=document.getElementById('view'),M=document.getElementById('modalRoot');
+const BUILT_IN_GALLERY=Array.isArray(window.GALLERY_DATA)&&window.GALLERY_DATA.length?window.GALLERY_DATA:FALLBACK_GALLERY;
+let G=[...BUILT_IN_GALLERY];
+const V=document.getElementById('view'),M=document.getElementById('modalRoot');
 const S={get(k,d=null){try{return JSON.parse(localStorage.getItem('ks_'+k))??d}catch(e){return d}},set(k,v){localStorage.setItem('ks_'+k,JSON.stringify(v))}};
 let state={view:'home',chapter:null,gallery:'All',tool:'calc',installPrompt:null};
+let pendingGalleryPhoto=null;
+
+const GALLERY_DB_NAME='ks-roadmark-gallery';
+const GALLERY_DB_STORE='photos';
+function openGalleryDB(){
+  return new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)){reject(new Error('IndexedDB unavailable'));return}
+    const request=indexedDB.open(GALLERY_DB_NAME,1);
+    request.onupgradeneeded=()=>{
+      const db=request.result;
+      if(!db.objectStoreNames.contains(GALLERY_DB_STORE))db.createObjectStore(GALLERY_DB_STORE,{keyPath:'id'})
+    };
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error||new Error('Gallery database error'))
+  })
+}
+async function galleryDBAction(mode,action){
+  const db=await openGalleryDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(GALLERY_DB_STORE,mode),store=tx.objectStore(GALLERY_DB_STORE);
+    let request;
+    try{request=action(store)}catch(error){db.close();reject(error);return}
+    tx.oncomplete=()=>{db.close();resolve(request?.result)};
+    tx.onerror=()=>{db.close();reject(tx.error||request?.error||new Error('Gallery database error'))};
+    tx.onabort=()=>{db.close();reject(tx.error||new Error('Gallery database aborted'))}
+  })
+}
+async function loadCustomGallery(){
+  try{
+    const photos=await galleryDBAction('readonly',store=>store.getAll());
+    const custom=Array.isArray(photos)?photos.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)):[];
+    G=[...BUILT_IN_GALLERY,...custom];
+    if(state.view==='gallery')galleryView(state.gallery);
+    else if(state.view==='home')home()
+  }catch(error){console.warn('Custom gallery could not be loaded',error)}
+}
 
 // خەمڵاندنی مەیدانی: ئەم نرخانە preset ـی پلانکردنن، نە ستانداردی گشتی.
 // TDS/Specification ـی بەرهەمی بەکارهاتوو هەمیشە پێشترە.
@@ -84,6 +122,7 @@ function applySettings(){let theme=S.get('theme','dark'),fs=S.get('font',1),lh=S
   .v8-gallery-head{display:grid;grid-template-columns:1fr auto;align-items:center;gap:15px;background:linear-gradient(135deg,#171912,#0c0d0d);border:1px solid #4f4516;border-radius:22px;padding:18px;margin-bottom:12px}
   .v8-gallery-head h1{font-size:22px;margin:4px 0 5px}.v8-gallery-head p{font-size:10px;color:var(--muted);line-height:1.7;margin:0}
   .v8-gallery-count{width:67px;height:67px;border-radius:18px;background:var(--yellow);color:#111;display:grid;place-items:center;align-content:center;direction:ltr}.v8-gallery-count b{font-size:23px;line-height:1}.v8-gallery-count small{font-size:8px;margin-top:4px;direction:rtl}
+  .v8-gallery-add{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;font-size:13px}.v8-gallery-add small{font-size:9px;font-weight:500;opacity:.72}
   .v8-gallery-search{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:4px 11px;margin-bottom:10px}.v8-gallery-search:focus-within{border-color:#7a6500}
   .v8-gallery-search span{color:var(--yellow);font-size:19px}.v8-gallery-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text);padding:11px 0;font-size:12px}
   .v8-gallery-tabs{margin-bottom:8px}.v8-gallery-tabs .chip{display:flex;align-items:center;gap:6px}.v8-gallery-tabs .chip em{font-style:normal;font-size:8px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:#252928;display:grid;place-items:center;direction:ltr}.v8-gallery-tabs .chip.active em{background:#111;color:var(--yellow)}
@@ -96,6 +135,9 @@ function applySettings(){let theme=S.get('theme','dark'),fs=S.get('font',1),lh=S
   .v8-photo-modal .modal-head>div{min-width:0}.v8-photo-modal .modal-head b{display:block;font-size:14px;margin-top:6px}.v8-photo-modal .modal-head small{display:block;color:var(--muted);font-size:9px;direction:ltr;margin-top:3px}
   .v8-modal-badge{display:inline-block;background:#272300;color:var(--yellow);border:1px solid #4d4306;border-radius:999px;padding:4px 7px;font-size:8px}
   .v8-modal-nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:10px}.v8-modal-nav button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:11px;padding:9px;font-size:10px}.v8-modal-nav span{font-size:9px;color:var(--muted);direction:ltr}
+  .v8-upload-picker{display:block;border:2px dashed #625616;background:#13150f;border-radius:17px;padding:18px;text-align:center;cursor:pointer;margin-bottom:12px}.v8-upload-picker span{display:grid;place-items:center;width:46px;height:46px;margin:0 auto 9px;border-radius:14px;background:var(--yellow);color:#111;font-size:25px}.v8-upload-picker b{display:block;font-size:13px}.v8-upload-picker small{display:block;color:var(--muted);font-size:9px;margin-top:5px}.v8-upload-picker input{display:none}
+  .v8-upload-preview{display:none;width:100%;max-height:42vh;object-fit:contain;background:#070808;border:1px solid var(--line);border-radius:15px;margin-bottom:12px}.v8-upload-preview.ready{display:block}
+  .v8-upload-note{font-size:9px;color:var(--muted);line-height:1.7;background:#111313;border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin:10px 0}.v8-upload-actions{display:grid;grid-template-columns:1.3fr .7fr;gap:8px}.v8-upload-actions button{width:100%}
 
   .v82-manager-hero{border:1px solid #514615;border-radius:24px;padding:20px;background:
     radial-gradient(circle at 0 0,rgba(255,196,0,.17),transparent 36%),linear-gradient(145deg,#171912,#0b0c0c);margin-bottom:13px}
@@ -225,6 +267,8 @@ function galleryView(cat=state.gallery){
     <div class="v8-gallery-count"><b id="galleryCount">${items.length}</b><small>وێنە</small></div>
   </section>
 
+  <button class="btn primary v8-gallery-add" onclick="addPhotoModal()"><span>＋</span><b>وێنە زیاد بکە</b><small>لە مۆبایل یان کامێراوە</small></button>
+
   <div class="v8-gallery-search">
     <span>⌕</span>
     <input id="gallerySearchInput" type="search" placeholder="گەڕان... Arrow, Parking, Zebra, STOP" oninput="filterGallery(this.value)">
@@ -241,7 +285,7 @@ function galleryView(cat=state.gallery){
 
   <div class="gallery-grid v8-gallery-grid" id="galleryGrid">
     ${items.map((p,i)=>`
-      <article class="photo-card v8-photo-card" data-search="${esc((p.ku+' '+p.en+' '+p.category).toLowerCase())}" onclick="showPhoto(${p.id})">
+      <article class="photo-card v8-photo-card" data-search="${esc((p.ku+' '+p.en+' '+p.category).toLowerCase())}" onclick='showPhoto(${JSON.stringify(p.id)})'>
         <div class="v8-photo-wrap">
           <img loading="${i<4?'eager':'lazy'}" decoding="async" src="${p.src}" alt="${esc(p.ku)} — ${esc(p.en)}" onerror="handleGalleryImageError(this)">
           <span class="v8-photo-num">#${String(i+1).padStart(2,'0')}</span>
@@ -271,6 +315,81 @@ function handleGalleryImageError(img){
   let v=$('#galleryVisibleCount');if(v)v.textContent=shown+' وێنەی بەردەست';
   let e=$('#galleryEmpty');if(e)e.style.display=shown?'none':'block'
 }
+function addPhotoModal(){
+  pendingGalleryPhoto=null;
+  M.innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="modal-card">
+    <div class="modal-head"><div><span class="v8-modal-badge">وێنەی نوێ</span><b>زیادکردنی وێنە بۆ کاتالۆگ</b></div><button onclick="closeModal()">×</button></div>
+    <label class="v8-upload-picker" for="galleryPhotoInput"><span>＋</span><b>وێنە هەڵبژێرە</b><small>لە گەلەری یان کامێرای مۆبایلەکەت</small><input id="galleryPhotoInput" type="file" accept="image/*" onchange="previewGalleryPhoto(this)"></label>
+    <img id="galleryPhotoPreview" class="v8-upload-preview" alt="پێشبینینی وێنە">
+    <div class="form-grid">
+      <div class="field"><label>ناوی کوردی *</label><input id="galleryPhotoKu" placeholder="نموونە: تیری ئاراستەی ڕاست"></div>
+      <div class="field"><label>English name</label><input id="galleryPhotoEn" class="ltr" placeholder="Straight Arrow"></div>
+      <div class="field" style="grid-column:1/-1"><label>پۆلی وێنە</label><select id="galleryPhotoCategory">${GALLERY_CATEGORY_ORDER.filter(c=>c!=='All').map(c=>`<option value="${esc(c)}">${esc(galleryCategoryLabel(c))}</option>`).join('')}</select></div>
+    </div>
+    <div class="v8-upload-note">وێنەکە بچووک دەکرێتەوە و لەسەر هەمان ئامێرەکەت پارێزراو دەبێت؛ لە کاتی Offline ـیش بەردەستە.</div>
+    <div class="v8-upload-actions"><button id="galleryPhotoSave" class="btn primary" onclick="saveGalleryPhoto()">هەڵگرتنی وێنە</button><button class="btn" onclick="closeModal()">پاشگەزبوونەوە</button></div>
+  </div></div>`
+}
+function fileToGalleryDataURL(file){
+  return new Promise((resolve,reject)=>{
+    if(!file||!file.type.startsWith('image/')){reject(new Error('invalid-type'));return}
+    if(file.size>20*1024*1024){reject(new Error('too-large'));return}
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error('read-failed'));
+    reader.onload=()=>{
+      const image=new Image();
+      image.onerror=()=>reject(new Error('decode-failed'));
+      image.onload=()=>{
+        const maxSide=1600,scale=Math.min(1,maxSide/Math.max(image.naturalWidth,image.naturalHeight));
+        const width=Math.max(1,Math.round(image.naturalWidth*scale)),height=Math.max(1,Math.round(image.naturalHeight*scale));
+        const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+        const ctx=canvas.getContext('2d');ctx.fillStyle='#111';ctx.fillRect(0,0,width,height);ctx.drawImage(image,0,0,width,height);
+        try{resolve(canvas.toDataURL('image/jpeg',.84))}catch(error){reject(error)}
+      };
+      image.src=reader.result
+    };
+    reader.readAsDataURL(file)
+  })
+}
+async function previewGalleryPhoto(input){
+  const file=input?.files?.[0];if(!file)return;
+  const picker=input.closest('.v8-upload-picker'),preview=$('#galleryPhotoPreview');
+  if(picker){picker.querySelector('b').textContent='وێنەکە ئامادە دەکرێت...';picker.style.pointerEvents='none'}
+  try{
+    pendingGalleryPhoto=await fileToGalleryDataURL(file);
+    preview.src=pendingGalleryPhoto;preview.classList.add('ready');
+    const base=file.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim();
+    if(!$('#galleryPhotoKu').value)$('#galleryPhotoKu').value=base;
+    if(!$('#galleryPhotoEn').value)$('#galleryPhotoEn').value=base;
+    if(picker){picker.querySelector('b').textContent='گۆڕینی وێنە';picker.querySelector('small').textContent=file.name}
+  }catch(error){
+    pendingGalleryPhoto=null;preview.classList.remove('ready');input.value='';
+    toast(error.message==='too-large'?'قەبارەی وێنەکە زۆر گەورەیە':'ئەم جۆرە وێنەیە نەخوێندرایەوە')
+  }finally{if(picker)picker.style.pointerEvents=''}
+}
+async function saveGalleryPhoto(){
+  const ku=($('#galleryPhotoKu')?.value||'').trim(),en=($('#galleryPhotoEn')?.value||'').trim(),category=$('#galleryPhotoCategory')?.value||'Other';
+  if(!pendingGalleryPhoto){toast('سەرەتا وێنەیەک هەڵبژێرە');return}
+  if(!ku){toast('ناوی کوردی بنووسە');$('#galleryPhotoKu')?.focus();return}
+  const button=$('#galleryPhotoSave');if(button){button.disabled=true;button.textContent='هەڵدەگیرێت...'}
+  const now=Date.now(),id='custom-'+now+'-'+Math.random().toString(36).slice(2,8);
+  const photo={id,ku,en:en||ku,category,src:pendingGalleryPhoto,custom:true,createdAt:now};
+  try{
+    await galleryDBAction('readwrite',store=>store.put(photo));
+    G.push(photo);pendingGalleryPhoto=null;closeModal();state.gallery=category;galleryView(category);toast('وێنەکە زیاد کرا ✓')
+  }catch(error){
+    console.error(error);toast('وێنەکە هەڵنەگیرا؛ بۆشایی ئامێرەکەت بپشکنە');
+    if(button){button.disabled=false;button.textContent='هەڵگرتنی وێنە'}
+  }
+}
+async function deleteCustomPhoto(id){
+  const photo=G.find(x=>x.id===id);if(!photo?.custom)return;
+  if(!confirm('دڵنیایت لە سڕینەوەی ئەم وێنەیە؟'))return;
+  try{
+    await galleryDBAction('readwrite',store=>store.delete(id));
+    G=G.filter(x=>x.id!==id);closeModal();galleryView(state.gallery);toast('وێنەکە سڕایەوە')
+  }catch(error){toast('وێنەکە نەسڕایەوە')}
+}
 function showPhoto(id){
   let p=G.find(x=>x.id===id);if(!p)return;
   let idx=G.findIndex(x=>x.id===id),prev=G[(idx-1+G.length)%G.length],next=G[(idx+1)%G.length];
@@ -281,13 +400,14 @@ function showPhoto(id){
     </div>
     <img src="${p.src}" alt="${esc(p.en)}">
     <div class="v8-modal-nav">
-      <button onclick="showPhoto(${prev.id})">→ پێشوو</button>
+      <button onclick='showPhoto(${JSON.stringify(prev.id)})'>→ پێشوو</button>
       <span>${idx+1} / ${G.length}</span>
-      <button onclick="showPhoto(${next.id})">دواتر ←</button>
+      <button onclick='showPhoto(${JSON.stringify(next.id)})'>دواتر ←</button>
     </div>
+    ${p.custom?`<button class="btn danger small" style="width:100%;margin-top:9px" onclick='deleteCustomPhoto(${JSON.stringify(p.id)})'>سڕینەوەی ئەم وێنەیە</button>`:''}
   </div></div>`
 }
-function closeModal(){M.innerHTML=''}
+function closeModal(){pendingGalleryPhoto=null;M.innerHTML=''}
 function toolsView(tab=state.tool){cleanupReader();setNav('tools');state.tool=tab;let tabs=[['calc','هەژمارکەر'],['project','پڕۆژە'],['check','Checklist'],['standards','ستاندارد'],['docs','فایلەکان']];V.innerHTML=`<div class="section-head"><h2>ئامرازە مەیدانییەکان</h2><span>Field Toolkit</span></div><div class="tool-tabs">${tabs.map(([k,l])=>`<button class="chip ${k===tab?'active':''}" onclick="toolsView('${k}')">${l}</button>`).join('')}</div><div id="toolBody"></div>`;({calc:calcTool,project:projectTool,check:checkTool,standards:standardsTool,docs:docsTool}[tab]||calcTool)();window.scrollTo(0,0)}
 function calcTool(){let t=$('#toolBody');t.innerHTML=`<div class="panel"><div class="tool-tabs"><button class="chip active" data-calc="coverage">خەمڵاندنی بۆیاخ</button><button class="chip" data-calc="line">هێڵی بەردەوام</button><button class="chip" data-calc="broken">هێڵی پچڕاو</button><button class="chip" data-calc="zebra">زێبرا</button><button class="chip" data-calc="mix">2K Mix</button></div><div id="calcBody"></div></div>`;$$('[data-calc]').forEach(b=>b.onclick=()=>{$$('[data-calc]').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderCalc(b.dataset.calc)});renderCalc('coverage')}
 function num(id){return +document.getElementById(id)?.value||0}function resultCard(label,val,unit=''){return `<div class="result"><span>${label}</span><b>${Number(val).toFixed(2)} ${unit}</b></div>`}
@@ -379,4 +499,4 @@ function settingsModal(){let theme=S.get('theme','dark'),font=S.get('font',1),lh
 function setFont(d){S.set('font',Math.max(.8,Math.min(1.45,S.get('font',1)+d)));applySettings();settingsModal()}function setLH(d){S.set('lh',Math.max(1.5,Math.min(2.4,S.get('lh',1.95)+d)));applySettings();settingsModal()}function resetAppData(){if(confirm('هەموو Progress، Favorites، Notes و Project data بسڕدرێنەوە؟')){Object.keys(localStorage).filter(k=>k.startsWith('ks_')).forEach(k=>localStorage.removeItem(k));applySettings();closeModal();home();toast('Data reset')}}
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();state.installPrompt=e;$('#installTop').style.display='block'});async function installApp(){if(state.installPrompt){state.installPrompt.prompt();await state.installPrompt.userChoice;state.installPrompt=null}else{toast('لە Chrome: Menu → Add to Home screen / Install app')}}
 injectManagerNav();$$('.bottom-nav button').forEach(b=>b.onclick=()=>({home,book:bookView,gallery:galleryView,tools:toolsView,search:searchView,manager:managerView}[b.dataset.view]||home)());$$('[data-action="home"]').forEach(b=>b.onclick=home);$$('[data-action="settings"]').forEach(b=>b.onclick=settingsModal);$$('[data-action="install"]').forEach(b=>b.onclick=installApp);
-if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register('service-worker.js').catch(()=>{});home();
+if('serviceWorker' in navigator && location.protocol!=='file:')navigator.serviceWorker.register('service-worker.js').catch(()=>{});home();loadCustomGallery();
