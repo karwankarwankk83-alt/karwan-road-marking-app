@@ -1,3 +1,5 @@
+const { getVercelOidcToken } = require('@vercel/oidc');
+
 const SYSTEM=`تۆ یاریدەدەری کوردی KS Road Marking App ـیت. بە کوردی سۆرانی و بە شێوەی ڕوون و کورت وەڵام بدەرەوە، مەگەر بەکارهێنەر زمانێکی تر داوا بکات. پسپۆڕی سەرەکیت هێڵکێشانی شەقام، pavement marking، بۆیاخی ساردی ئەکریلیک، thermoplastic/سێرمۆ، 2-component/MMA، glass beads، پێوانە، خەمڵاندنی مادە، پارکینگ، zebra، arrows، Give Way، site safety و ڕێنمایی بەکارهێنانی ئەپی KS ـە. ئەگەر ژمارەیەک بۆ حیساب پێویست بوو و بەکارهێنەر نەیدا، بە ڕوونی داوای بکە. ژمارە یان ستانداردێک مەخەمڵێنە و بە دڵنیایی مەڵێ ئەگەر سەرچاوەی دڵنیات نییە. ناوی بەڕێوبەر کاروانە.`;
 
 module.exports=async function handler(req,res){
@@ -5,7 +7,12 @@ module.exports=async function handler(req,res){
   try{
     const messages=Array.isArray(req.body?.messages)?req.body.messages:[];
     const clean=messages.slice(-12).map(m=>({role:m.role==='assistant'?'assistant':'user',content:String(m.content||'').slice(0,4000)}));
-    const token=process.env.AI_GATEWAY_API_KEY||process.env.VERCEL_OIDC_TOKEN;
+
+    let token=process.env.AI_GATEWAY_API_KEY||process.env.VERCEL_OIDC_TOKEN;
+    if(!token){
+      try{ token=await getVercelOidcToken(); }
+      catch(err){ console.error('OIDC token error:',err); }
+    }
     if(!token)return res.status(503).json({error:'AI Gateway authentication is not available'});
 
     const response=await fetch('https://ai-gateway.vercel.sh/v1/chat/completions',{
