@@ -1,4 +1,4 @@
-const CACHE='ks-roadmark-v11';
+const CACHE='ks-roadmark-v12';
 const CORE=[
   './','./index.html','./styles.css','./app.js','./book-data.js',
   './gallery-data.js','./manifest.json','./icon-192.png','./icon-512.png'
