@@ -1,7 +1,8 @@
 (()=>{
   const history=[];
   let voiceEnabled=localStorage.getItem('ksVoiceEnabled')!=='false';
-  const greeting='سَلاو كاروان. چون يارماتيت بِدَم؟';
+  const greeting='سڵاو کاروان، چۆن یارمەتیت بدەم؟';
+  const greetingAudio=new Audio('/assets/ks-greeting.mp3');greetingAudio.preload='auto';
   const css=`
   .ks-ai-btn{position:fixed;right:18px;bottom:84px;z-index:90;width:58px;height:58px;border-radius:50%;border:2px solid #806600;background:#f4c400;color:#111;font-size:25px;box-shadow:0 12px 35px #0009;cursor:pointer}
   .ks-ai-panel{position:fixed;z-index:100;right:12px;bottom:78px;width:min(390px,calc(100vw - 24px));height:min(620px,calc(100dvh - 110px));display:none;flex-direction:column;background:#0d0f0e;border:1px solid #5d5015;border-radius:24px;overflow:hidden;box-shadow:0 24px 80px #000c;color:#f5f5f5;direction:rtl}
@@ -27,9 +28,10 @@
     speechSynthesis.speak(u);
   }
   add('assistant','سڵاو کاروان 👋\nمن یاریدەدەری کوردی KS ـم. دەتوانیت لەبارەی هێڵکێشانی شەقام، بۆیاخ، پێوانە، خەمڵاندنی مادە و بەشەکانی ئەپ پرسیارم لێ بکەیت.');
+  function playGreeting(){if(!voiceEnabled)return;greetingAudio.pause();greetingAudio.currentTime=0;greetingAudio.play().catch(()=>speak(greeting))}
   let greeted=false;
-  function open(){panel.classList.add('open');btn.style.display='none';if(!greeted){greeted=true;speak(greeting)}setTimeout(()=>input.focus(),100)}
-  function close(){panel.classList.remove('open');btn.style.display='';if('speechSynthesis' in window)speechSynthesis.cancel()}
+  function open(){panel.classList.add('open');btn.style.display='none';if(!greeted){greeted=true;playGreeting()}setTimeout(()=>input.focus(),100)}
+  function close(){panel.classList.remove('open');btn.style.display='';greetingAudio.pause();if('speechSynthesis' in window)speechSynthesis.cancel()}
   btn.addEventListener('click',open);panel.querySelector('.ks-ai-close').addEventListener('click',close);
   voiceBtn.addEventListener('click',()=>{voiceEnabled=!voiceEnabled;localStorage.setItem('ksVoiceEnabled',String(voiceEnabled));voiceBtn.classList.toggle('off',!voiceEnabled);voiceBtn.textContent=voiceEnabled?'🔊':'🔇';if(voiceEnabled)speak('دەنگ چالاک کرا');else if('speechSynthesis' in window)speechSynthesis.cancel()});
   form.addEventListener('submit',async e=>{e.preventDefault();const text=input.value.trim();if(!text)return;input.value='';add('user',text);history.push({role:'user',content:text});const wait=add('assistant','بیر دەکەمەوە…');input.disabled=true;
