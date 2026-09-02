@@ -1,28 +1,91 @@
-/* KS Calculator v2 — clearer bilingual field calculator */
+/* KS Calculator v3 — simple Kurdish-first field workflow */
 (function(){
-const P={
- thermo:{ku:'سێرمۆ',en:'Thermoplastic',rate:4.00,beads:.45,waste:5,note:'خەمڵاندنی سەرەتایی بۆ ئەستووری نزیکەی 2 mm. نرخە ڕاستەقینەکە لە TDS/Specification وەربگرە.'},
- coldAcrylic:{ku:'بۆیاخی سارد ئەکریلیک',en:'Cold Acrylic',rate:.60,beads:.35,waste:5,note:'بۆ thin-film. نرخ بە پێی solids، ئەستووری و بەرهەم دەگۆڕێت.'},
- waterAcrylic:{ku:'ئەکریلیکی بنەمای ئاو',en:'Water-Based Acrylic',rate:.60,beads:.35,waste:5,note:'بۆ thin-film. TDS ـی بەرهەم سەرچاوەی کۆتاییە.'},
- mma:{ku:'پلاستیکی سارد / MMA',en:'MMA / Cold Plastic',rate:3.00,beads:.45,waste:5,note:'ڕێژەی hardener/catalyst لە TDS ـی هەمان بەرهەمەوە وەربگرە.'},
- twoK:{ku:'بۆیاخی دوو کۆمپۆنێت',en:'2K / Two Component',rate:.60,beads:.35,waste:5,note:'ڕێژەی Base + Hardener بە پێی TDS داخڵ بکە؛ preset تەنها بۆ خەمڵاندنە.'}
+const PAINT={
+ thermo:{name:'سێرمۆ',rate:4,beads:.45,pack:25},
+ cold:{name:'بۆیاخی سارد ئەکریلیک',rate:.60,beads:.35,pack:20},
+ water:{name:'ئەکریلیکی بنەمای ئاو',rate:.60,beads:.35,pack:20},
+ mma:{name:'پلاستیکی سارد / MMA',rate:3,beads:.45,pack:25},
+ twoK:{name:'بۆیاخی دوو کۆمپۆنێت',rate:.60,beads:.35,pack:20}
 };
-const SF={smoothAsphalt:{ku:'ئاسفاڵتی نەرم / نوێ',en:'Smooth Asphalt',f:1},roughAsphalt:{ku:'ئاسفاڵتی زبر / کۆن',en:'Rough Asphalt',f:1.10},concrete:{ku:'کۆنکریت',en:'Concrete',f:1.08},pavers:{ku:'کەلەبستۆن / بەردی ڕێگا',en:'Pavers / Cobblestone',f:1.20}};
-const bi=(ku,en)=>`${ku}<small style="display:block;color:var(--muted);font-size:9px;margin-top:3px;direction:ltr">${en}</small>`;
-const field=(label,id,value,step='.01',extra='')=>`<div class="field"><label>${label}</label><input class="ltr" id="${id}" type="number" min="0" step="${step}" value="${value}" ${extra}></div>`;
-function result(label,val,unit=''){return `<div class="result"><span>${label}</span><b>${Number(val||0).toFixed(2)} ${unit}</b></div>`}
-window.calcTool=function(){let t=document.querySelector('#toolBody');t.innerHTML=`<section class="kscalc-head"><b>هەژمارکەری کاری شەقام</b><small>Road Marking Calculator</small><p>یەکەم جۆری کار هەڵبژێرە، پاشان تەنها پێوانەکان داخڵ بکە. ئەنجامەکان خۆکار نوێ دەبنەوە.</p></section><div class="panel"><div class="tool-tabs"><button class="chip active" data-calc="coverage">ڕووبەر و ماددە</button><button class="chip" data-calc="line">هێڵی بەردەوام</button><button class="chip" data-calc="broken">هێڵی پچڕاو</button><button class="chip" data-calc="zebra">زێبرا</button><button class="chip" data-calc="mix">تێکەڵکردنی 2K</button></div><div id="calcBody"></div></div>`;document.querySelectorAll('[data-calc]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-calc]').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderCalc(b.dataset.calc)});renderCalc('coverage')};
-window.renderCalc=function(type){let c=document.querySelector('#calcBody');if(!c)return;
- if(type==='coverage'){c.innerHTML=`<div class="kscalc-guide"><b>١. ڕووبەرەکە بنووسە</b><span>٢. جۆری بۆیاخ هەڵبژێرە</span><span>٣. بڕی ماددە خۆکار دەردەچێت</span></div><div class="form-grid kscalc-form"><div class="field"><label>${bi('جۆری بۆیاخ','Paint Type')}</label><select id="paintType" onchange="syncCoverageDefaults();doCoverageCalc()">${Object.entries(P).map(([k,p])=>`<option value="${k}">${p.ku} — ${p.en}</option>`).join('')}</select></div><div class="field"><label>${bi('ڕووی شەقام','Road Surface')}</label><select id="surfaceType" onchange="doCoverageCalc()">${Object.entries(SF).map(([k,s])=>`<option value="${k}">${s.ku} — ${s.en}</option>`).join('')}</select></div>${field(bi('ڕووبەری کار (m²)','Work Area'),'workArea',100,'1','oninput="doCoverageCalc()"')}${field(bi('ڕێژەی بۆیاخ (kg/m²)','Paint Consumption'),'coverageRate',4,'.01','oninput="doCoverageCalc()"')}${field(bi('دانی شووشەیی (kg/m²)','Glass Beads'),'coverageBeads',.45,'.01','oninput="doCoverageCalc()"')}${field(bi('زیادەی کار (%)','Waste Allowance'),'coverageWaste',5,'.5','oninput="doCoverageCalc()"')}</div><div class="results" id="calcResults"></div><div class="kscalc-note" id="coverageNote"></div>`;syncCoverageDefaults();doCoverageCalc();return}
- if(type==='line'){c.innerHTML=`<div class="kscalc-guide"><b>هێڵی بەردەوام</b><span>درێژی × پانی = ڕووبەر</span></div><div class="form-grid kscalc-form">${field(bi('درێژی (m)','Length'),'l',1000,'1','oninput="doLineCalc()"')}${field(bi('پانی (cm)','Width'),'w',15,'.1','oninput="doLineCalc()"')}${field(bi('ڕێژەی ماددە (kg/m²)','Material Rate'),'r',4,'.01','oninput="doLineCalc()"')}${field(bi('دانی شووشەیی (kg/m²)','Glass Beads'),'g',.45,'.01','oninput="doLineCalc()"')}${field(bi('زیادەی کار (%)','Waste Allowance'),'x',5,'.5','oninput="doLineCalc()"')}</div><div class="results" id="calcResults"></div><div id="addProject"></div>`;doLineCalc();return}
- if(type==='broken'){c.innerHTML=`<div class="kscalc-guide"><b>هێڵی پچڕاو</b><span>Mark = بەشی بۆیاخکراو</span><span>Gap = بۆشایی نێوان هێڵەکان</span></div><div class="form-grid kscalc-form">${field(bi('کۆی درێژی (m)','Total Length'),'bl',1000,'1','oninput="doBrokenCalc()"')}${field(bi('درێژی هەر هێڵ (m)','Mark Length'),'bm',3,'.1','oninput="doBrokenCalc()"')}${field(bi('بۆشایی (m)','Gap Length'),'bg',9,'.1','oninput="doBrokenCalc()"')}${field(bi('پانی (cm)','Width'),'bw',15,'.1','oninput="doBrokenCalc()"')}${field(bi('ڕێژەی ماددە (kg/m²)','Material Rate'),'br',4,'.01','oninput="doBrokenCalc()"')}${field(bi('دانی شووشەیی (kg/m²)','Glass Beads'),'bb',.45,'.01','oninput="doBrokenCalc()"')}${field(bi('زیادەی کار (%)','Waste Allowance'),'bx',5,'.5','oninput="doBrokenCalc()"')}</div><div class="results" id="calcResults"></div>`;doBrokenCalc();return}
- if(type==='zebra'){c.innerHTML=`<div class="kscalc-guide"><b>پەڕینەوەی زێبرا</b><span>ژمارە × پانی × درێژی = ڕووبەر</span></div><div class="form-grid kscalc-form">${field(bi('ژمارەی هێڵەکان','Number of Stripes'),'zn',8,'1','oninput="doZebraCalc()"')}${field(bi('پانی هەر هێڵ (m)','Stripe Width'),'zw',.5,'.01','oninput="doZebraCalc()"')}${field(bi('درێژی هەر هێڵ (m)','Stripe Length'),'zl',4,'.01','oninput="doZebraCalc()"')}${field(bi('ڕێژەی ماددە (kg/m²)','Material Rate'),'zr',4,'.01','oninput="doZebraCalc()"')}${field(bi('دانی شووشەیی (kg/m²)','Glass Beads'),'zb',.45,'.01','oninput="doZebraCalc()"')}${field(bi('زیادەی کار (%)','Waste Allowance'),'zx',5,'.5','oninput="doZebraCalc()"')}</div><div class="results" id="calcResults"></div>`;doZebraCalc();return}
- c.innerHTML=`<div class="kscalc-guide"><b>تێکەڵکردنی 2K</b><span>ڕێژەکە لە TDS ـی بەرهەمەکەت وەربگرە</span></div><div class="form-grid kscalc-form">${field(bi('کۆی تێکەڵ (kg)','Total Mix'),'mt',100,'.1','oninput="doMixCalc()"')}${field(bi('بەشی بنەڕەت','Base Parts'),'mp',98,'.1','oninput="doMixCalc()"')}${field(bi('بەشی هاردنەر','Hardener Parts'),'mh',2,'.1','oninput="doMixCalc()"')}</div><div class="results" id="calcResults"></div><div class="kscalc-note">98:2 تەنها نموونەی هەژمارە؛ بۆ کارکردن ڕێژەی نووسراو لە TDS بەکاربهێنە.</div>`;doMixCalc()};
-window.syncCoverageDefaults=function(){let p=P[document.querySelector('#paintType')?.value]||P.thermo;let r=document.querySelector('#coverageRate'),b=document.querySelector('#coverageBeads'),w=document.querySelector('#coverageWaste');if(r)r.value=p.rate;if(b)b.value=p.beads;if(w)w.value=p.waste};
-window.doCoverageCalc=function(){let p=P[document.querySelector('#paintType')?.value]||P.thermo,s=SF[document.querySelector('#surfaceType')?.value]||SF.smoothAsphalt,A=Math.max(0,num('workArea')),base=Math.max(0,num('coverageRate')),rate=base*s.f,bead=Math.max(0,num('coverageBeads')),w=Math.max(0,num('coverageWaste')),net=A*rate,paint=net*(1+w/100),beads=A*bead*(1+w/100),bags25=paint/25;document.querySelector('#calcResults').innerHTML=result(bi('ڕووبەر','Area'),A,'m²')+result(bi('بۆیاخی پێویست + زیادە','Paint + Waste'),paint,'kg')+result(bi('دانی شووشەیی + زیادە','Glass Beads + Waste'),beads,'kg')+result(bi('ژمارەی کیسە/قوطی 25kg','25 kg Packs'),Math.ceil(bags25),'')+result(bi('نرخی کاریگەر','Adjusted Rate'),rate,'kg/m²');document.querySelector('#coverageNote').innerHTML=`<b>${p.ku} — ${p.en}</b><br>${p.note}<br>فاکتەری ڕوو: <b>${s.f.toFixed(2)}</b>. ئەگەر TDS نرخێکی جیاواز دەڵێت، لە خانەی «ڕێژەی بۆیاخ» ئەو نرخە داخڵ بکە.`};
-window.doLineCalc=function(){let A=num('l')*num('w')/100,M=A*num('r'),G=A*num('g'),P=M*(1+num('x')/100),GB=G*(1+num('x')/100);document.querySelector('#calcResults').innerHTML=result(bi('ڕووبەر','Area'),A,'m²')+result(bi('ماددەی خاو','Net Material'),M,'kg')+result(bi('ماددە + زیادە','Material + Waste'),P,'kg')+result(bi('دانی شووشەیی + زیادە','Glass Beads + Waste'),GB,'kg');let a=document.querySelector('#addProject');if(a)a.innerHTML=`<button class="btn small" style="margin-top:10px" onclick="addProjectItem('هێڵی بەردەوام',${A},${P},${GB})">+ زیادکردن بۆ پڕۆژە</button>`};
-window.doBrokenCalc=function(){let L=num('bl'),m=num('bm'),g=num('bg'),cycle=m+g,paint=cycle>0?Math.floor(L/cycle)*m+Math.min(L%cycle,m):0,A=paint*num('bw')/100,M=A*num('br'),B=A*num('bb'),w=num('bx');document.querySelector('#calcResults').innerHTML=result(bi('درێژی بۆیاخکراو','Painted Length'),paint,'m')+result(bi('ڕووبەر','Area'),A,'m²')+result(bi('ماددە + زیادە','Material + Waste'),M*(1+w/100),'kg')+result(bi('دانی شووشەیی + زیادە','Glass Beads + Waste'),B*(1+w/100),'kg')};
-window.doZebraCalc=function(){let A=num('zn')*num('zw')*num('zl'),M=A*num('zr'),B=A*num('zb'),w=num('zx');document.querySelector('#calcResults').innerHTML=result(bi('ڕووبەری ڕاستەقینە','Actual Area'),A,'m²')+result(bi('ماددە + زیادە','Material + Waste'),M*(1+w/100),'kg')+result(bi('دانی شووشەیی + زیادە','Glass Beads + Waste'),B*(1+w/100),'kg')};
-window.doMixCalc=function(){let T=num('mt'),p=num('mp'),h=num('mh'),sum=p+h,base=sum?T*p/sum:0,hard=sum?T*h/sum:0;document.querySelector('#calcResults').innerHTML=result(bi('ماددەی بنەڕەت','Base'),base,'kg')+result(bi('هاردنەر','Hardener'),hard,'kg')};
-const st=document.createElement('style');st.textContent=`.kscalc-head{border:1px solid #554916;background:linear-gradient(135deg,#171912,#0c0d0d);border-radius:20px;padding:16px;margin-bottom:10px}.kscalc-head>b{display:block;font-size:18px}.kscalc-head>small{display:block;color:var(--yellow);direction:ltr;text-align:right;margin-top:3px}.kscalc-head p{font-size:10px;color:var(--muted);line-height:1.8;margin:8px 0 0}.kscalc-guide{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.kscalc-guide>*{background:#171919;border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:9px}.kscalc-guide b{background:#292500;color:var(--yellow);border-color:#5d500d}.kscalc-form .field{background:#111313;border:1px solid var(--line);border-radius:14px;padding:10px}.kscalc-form label{font-weight:800;line-height:1.5}.kscalc-form input,.kscalc-form select{margin-top:7px}.kscalc-note{margin-top:12px;padding:12px;border-radius:13px;background:#111313;border-right:3px solid var(--yellow);font-size:10px;color:var(--muted);line-height:1.9}.kscalc-note b{color:var(--text)}.results .result span small{font-weight:400}@media(max-width:650px){.kscalc-form{grid-template-columns:1fr 1fr}.kscalc-form .field{padding:9px}.kscalc-form label{font-size:10px}}`;document.head.appendChild(st);
+const SURFACE={
+ smooth:{name:'ئاسفاڵتی نوێ و نەرم',factor:1},
+ rough:{name:'ئاسفاڵتی کۆن و زبر',factor:1.10},
+ concrete:{name:'کۆنکریت',factor:1.08},
+ pavers:{name:'کەلەبستۆن',factor:1.20}
+};
+const $=s=>document.querySelector(s);
+const n=id=>Math.max(0,Number($('#'+id)?.value)||0);
+const input=(label,id,value,unit,step='.01')=>`<label class="c3-field"><span>${label}</span><div><input id="${id}" type="number" min="0" step="${step}" value="${value}" inputmode="decimal"><em>${unit}</em></div></label>`;
+const paintSelect=()=>`<label class="c3-field"><span>جۆری بۆیاخ</span><select id="cPaint">${Object.entries(PAINT).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('')}</select></label>`;
+const surfaceSelect=()=>`<label class="c3-field"><span>ڕووی شەقام</span><select id="cSurface">${Object.entries(SURFACE).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('')}</select></label>`;
+function settings(){
+ const p=PAINT[$('#cPaint')?.value]||PAINT.thermo;
+ return `<details class="c3-advanced"><summary>ڕێکخستنی ورد</summary><div class="c3-grid">
+ ${input('ڕێژەی بۆیاخ','cRate',p.rate,'kg/m²')}
+ ${input('دانی شووشەیی','cBeads',p.beads,'kg/m²')}
+ ${input('زیادەی کار','cWaste',5,'%','.5')}
+ ${input('قەبارەی کیسە/قوطی','cPack',p.pack,'kg','1')}
+ </div><p>ئەگەر TDS ـی بەرهەمەکەت ژمارەی جیاواز دەڵێت، لێرە بیگۆڕە.</p></details>`;
+}
+function shell(title,help,fields){
+ return `<div class="c3-top"><button class="c3-back" type="button" onclick="calcTool()">‹ گەڕانەوە</button><div><b>${title}</b><small>${help}</small></div></div><div class="c3-form"><div class="c3-grid">${fields}</div>${settings()}</div><div id="c3Results" class="c3-results"></div>`;
+}
+function result(area,paint,beads,extra=''){
+ const pack=n('cPack')||25, packs=Math.ceil(paint/pack);
+ $('#c3Results').innerHTML=`<h3>ئەنجامی خەمڵاندن</h3><div class="c3-main-result"><span>بۆیاخی پێویست</span><strong>${paint.toFixed(2)}</strong><b>kg</b></div><div class="c3-result-grid"><div><span>ڕووبەر</span><b>${area.toFixed(2)} m²</b></div><div><span>دانی شووشەیی</span><b>${beads.toFixed(2)} kg</b></div><div><span>کیسە/قوطی ${pack} kg</span><b>${packs} دانە</b></div>${extra}</div><p>ئەنجامەکە زیادەی کاری ${n('cWaste').toFixed(1)}% لەخۆ دەگرێت.</p>`;
+}
+function values(area){
+ const p=PAINT[$('#cPaint').value],s=SURFACE[$('#cSurface').value],w=1+n('cWaste')/100;
+ return {paint:area*n('cRate')*s.factor*w,beads:area*n('cBeads')*w,p,s};
+}
+function bind(calc){
+ ['input','change'].forEach(ev=>$('#calcBody').addEventListener(ev,e=>{
+  if(e.target.id==='cPaint'){const p=PAINT[e.target.value];$('#cRate').value=p.rate;$('#cBeads').value=p.beads;$('#cPack').value=p.pack}
+  calc();
+ }));
+ calc();
+}
+window.calcTool=function(){
+ const t=$('#toolBody');if(!t)return;
+ t.innerHTML=`<section class="c3-intro"><b>هەژمارکەری کاری شەقام</b><p>ئەو کارە هەڵبژێرە کە دەتەوێت هەژماری بکەیت.</p></section>
+ <div class="c3-choices">
+ <button onclick="renderCalc('line')"><i>━</i><b>هێڵی شەقام</b><small>بەردەوام یان پچڕاو</small></button>
+ <button onclick="renderCalc('zebra')"><i>▥</i><b>زێبرا و نیشانە</b><small>ژمارە و پێوانەی هێڵەکان</small></button>
+ <button onclick="renderCalc('area')"><i>□</i><b>ڕووبەر و بۆیاخ</b><small>لە m² بۆ kg</small></button>
+ <button onclick="renderCalc('mix')"><i>◒</i><b>تێکەڵکردنی 2K</b><small>بنەڕەت و هاردنەر</small></button>
+ </div><div id="calcBody"></div>`;
+};
+window.renderCalc=function(type){
+ const c=$('#calcBody');if(!c)return;
+ if(type==='line'){
+  c.innerHTML=shell('هێڵی شەقام','درێژی و پانی داخڵ بکە',`
+  <label class="c3-field"><span>جۆری هێڵ</span><select id="lineKind"><option value="solid">بەردەوام</option><option value="broken">پچڕاو</option></select></label>
+  ${input('کۆی درێژی','lineLength',1000,'m','1')}${input('پانی هێڵ','lineWidth',15,'cm','.1')}
+  <div id="brokenFields" class="c3-subgrid" hidden>${input('درێژی بەشی بۆیاخکراو','markLength',3,'m','.1')}${input('بۆشایی نێوانیان','gapLength',9,'m','.1')}</div>
+  ${paintSelect()}${surfaceSelect()}`);
+  bind(()=>{const broken=$('#lineKind').value==='broken';$('#brokenFields').hidden=!broken;const L=n('lineLength'),mark=n('markLength'),gap=n('gapLength'),cycle=mark+gap;let painted=L;if(broken)painted=cycle?Math.floor(L/cycle)*mark+Math.min(L%cycle,mark):0;const area=painted*n('lineWidth')/100,v=values(area);result(area,v.paint,v.beads,broken?`<div><span>درێژی بۆیاخکراو</span><b>${painted.toFixed(2)} m</b></div>`:'')});return;
+ }
+ if(type==='zebra'){
+  c.innerHTML=shell('زێبرا و نیشانە','ژمارە و پێوانەی هەر بەش داخڵ بکە',`
+  ${input('ژمارەی هێڵ/بەش','stripeCount',8,'دانە','1')}${input('درێژی هەر بەش','stripeLength',4,'m','.01')}${input('پانی هەر بەش','stripeWidth',.5,'m','.01')}
+  ${paintSelect()}${surfaceSelect()}`);
+  bind(()=>{const area=n('stripeCount')*n('stripeLength')*n('stripeWidth'),v=values(area);result(area,v.paint,v.beads)});return;
+ }
+ if(type==='area'){
+  c.innerHTML=shell('ڕووبەر و بڕی بۆیاخ','ڕووبەری کارەکە بە m² بنووسە',`
+  ${input('ڕووبەری کار','workArea',100,'m²','1')}${paintSelect()}${surfaceSelect()}`);
+  bind(()=>{const area=n('workArea'),v=values(area);result(area,v.paint,v.beads)});return;
+ }
+ c.innerHTML=`<div class="c3-top"><button class="c3-back" type="button" onclick="calcTool()">‹ گەڕانەوە</button><div><b>تێکەڵکردنی 2K</b><small>ڕێژەکە لە TDS وەربگرە</small></div></div><div class="c3-form"><div class="c3-grid">${input('کۆی تێکەڵ','mixTotal',100,'kg','.1')}${input('بەشی ماددەی بنەڕەت','basePart',98,'بەش','.1')}${input('بەشی هاردنەر','hardPart',2,'بەش','.1')}</div></div><div id="c3Results" class="c3-results"></div>`;
+ bind(()=>{const total=n('mixTotal'),base=n('basePart'),hard=n('hardPart'),sum=base+hard,b=sum?total*base/sum:0,h=sum?total*hard/sum:0;$('#c3Results').innerHTML=`<h3>ئەنجامی تێکەڵ</h3><div class="c3-main-result"><span>ماددەی بنەڕەت</span><strong>${b.toFixed(2)}</strong><b>kg</b></div><div class="c3-result-grid"><div><span>هاردنەر</span><b>${h.toFixed(2)} kg</b></div><div><span>کۆی تێکەڵ</span><b>${total.toFixed(2)} kg</b></div></div><p>پێش تێکەڵکردن ڕێژەی TDS ـی بەرهەمەکەت دڵنیا بکەرەوە.</p>`});
+};
+const st=document.createElement('style');st.textContent=`
+.c3-intro{padding:18px;border-radius:20px;background:linear-gradient(135deg,#211d08,#0e1010);border:1px solid #5a4b0d;margin-bottom:12px}.c3-intro b{font-size:20px}.c3-intro p{margin:6px 0 0;color:var(--muted);font-size:14px}
+.c3-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}.c3-choices button{min-height:132px;text-align:right;padding:16px;border:1px solid var(--line);border-radius:18px;background:#121414;color:var(--text)}.c3-choices i{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--yellow);color:#111;font-size:24px;font-style:normal;margin-bottom:12px}.c3-choices b,.c3-choices small{display:block}.c3-choices b{font-size:16px}.c3-choices small{font-size:13px;color:var(--muted);margin-top:5px}
+.c3-top{display:flex;align-items:center;gap:12px;margin:14px 0 10px}.c3-top>div{flex:1}.c3-top b,.c3-top small{display:block}.c3-top b{font-size:19px}.c3-top small{font-size:13px;color:var(--muted);margin-top:3px}.c3-back{border:1px solid var(--line);background:#171919;color:var(--text);border-radius:12px;padding:10px 12px;font-size:14px}
+.c3-form{background:#0f1111;border:1px solid var(--line);border-radius:18px;padding:12px}.c3-grid,.c3-subgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.c3-subgrid{grid-column:1/-1}.c3-field{display:block;background:#171919;border:1px solid #303333;border-radius:14px;padding:11px}.c3-field>span{display:block;font-size:14px;font-weight:800;margin-bottom:7px}.c3-field>div{display:flex;direction:ltr;align-items:center;gap:8px}.c3-field input,.c3-field select,.c3-field>select{width:100%;min-height:46px;border:1px solid #414541;background:#0d0f0f;color:var(--text);border-radius:11px;padding:9px;font-size:17px}.c3-field em{font-size:13px;color:var(--muted);font-style:normal;white-space:nowrap}
+.c3-advanced{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}.c3-advanced summary{cursor:pointer;color:var(--yellow);font-size:14px;font-weight:800;padding:7px}.c3-advanced p{font-size:12px;color:var(--muted);line-height:1.7;margin:8px}
+.c3-results{margin-top:12px;border-radius:18px;background:#161914;border:1px solid #5a4b0d;padding:14px}.c3-results h3{font-size:14px;color:var(--yellow);margin:0 0 10px}.c3-main-result{display:flex;align-items:end;gap:8px;background:var(--yellow);color:#111;border-radius:16px;padding:15px}.c3-main-result span{flex:1;font-weight:900}.c3-main-result strong{font-size:31px;line-height:1}.c3-main-result b{font-size:14px}.c3-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.c3-result-grid>div{background:#0f1110;border:1px solid var(--line);border-radius:12px;padding:10px}.c3-result-grid span,.c3-result-grid b{display:block}.c3-result-grid span{font-size:12px;color:var(--muted)}.c3-result-grid b{font-size:16px;margin-top:4px}.c3-results>p{font-size:12px;color:var(--muted);margin:10px 2px 0}
+@media(max-width:650px){.c3-choices{grid-template-columns:1fr 1fr}.c3-grid,.c3-subgrid{grid-template-columns:1fr}.c3-subgrid{grid-column:auto}.c3-field{padding:10px}.c3-result-grid{grid-template-columns:1fr 1fr}}
+`;document.head.appendChild(st);
 })();
