@@ -1,0 +1,8 @@
+{
+  "name": "karwan-road-marking-app",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@vercel/oidc": "3.8.1"
+  }
+}
