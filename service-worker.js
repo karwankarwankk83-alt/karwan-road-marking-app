@@ -1,7 +1,7 @@
-const CACHE='ks-roadmark-v14';
+const CACHE='ks-roadmark-v15';
 const CORE=[
   './','./index.html','./styles.css','./app.js','./assistant.js','./book-data.js',
-  './gallery-data.js','./manifest.json','./icon-192.png','./icon-512.png'
+  './gallery-data.js','./assets/ks-greeting.mp3','./manifest.json','./icon-192.png','./icon-512.png'
 ];
 
 self.addEventListener('install',event=>{
