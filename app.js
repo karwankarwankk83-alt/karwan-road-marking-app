@@ -225,7 +225,7 @@ function home(){
     <button onclick="toolsView('standards')"><i>§</i><b>ستانداردەکان</b><small>EN / Iraqi</small></button>
     <button onclick="searchView()"><i>⌕</i><b>گەڕان</b><small>لە کتێبەکەدا</small></button>
     <button onclick="toolsView('project')"><i>Σ</i><b>پڕۆژە</b><small>کۆی ماددە</small></button>
-    <button onclick="managerView()"><i>✦</i><b>ChatGPT</b><small>بەڕێوەبەری ئەپ</small></button>
+    <button onclick="managerView()"><i>✦</i><b>کاروان</b><small>بەڕێوەبەری ئەپ</small></button>
   </div>
 
   <div class="v8-section-title"><div><span>کاتالۆگ</span><h2>وێنەکان بە پۆل</h2></div><button class="v8-link" onclick="galleryView()">هەمووی ببینە</button></div>
@@ -441,7 +441,7 @@ function injectManagerNav(){
   if(!nav||nav.querySelector('[data-view="manager"]'))return;
   let b=document.createElement('button');
   b.dataset.view='manager';
-  b.innerHTML='<span>✦</span><small>ChatGPT</small>';
+  b.innerHTML='<span>✦</span><small>کاروان</small>';
   nav.appendChild(b);
 }
 function managerView(){
@@ -449,10 +449,10 @@ function managerView(){
   V.innerHTML=`
   <section class="v82-manager-hero">
     <span class="v8-eyebrow">KS APP MANAGER</span>
-    <h1>ChatGPT / بەڕێوەبەری ئەپ</h1>
+    <h1>کاروان / بەڕێوەبەری ئەپ</h1>
     <p>لەوێ داواکارییەکەت بنووسە. دوگمەکە دەقەکە کۆپی دەکات و ChatGPT دەکاتەوە تا گۆڕانکارییەکەت پێ بسپێریت.</p>
     <div class="v82-manager-status">
-      <span class="ready">● ChatGPT Ready</span>
+      <span class="ready">● کاروان ئامادەیە</span>
       <span>KS Road Marking</span>
       <span>GitHub + Vercel</span>
     </div>
