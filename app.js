@@ -319,8 +319,8 @@ function addPhotoModal(){
   pendingGalleryPhoto=null;
   M.innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="modal-card">
     <div class="modal-head"><div><span class="v8-modal-badge">وێنەی نوێ</span><b>زیادکردنی وێنە بۆ کاتالۆگ</b></div><button onclick="closeModal()">×</button></div>
-    <button type="button" class="v8-upload-picker" data-gallery-action="pick"><span>＋</span><b>وێنە هەڵبژێرە</b><small>لە گەلەری یان کامێرای مۆبایلەکەت</small></button>
     <input id="galleryPhotoInput" class="v8-file-input" type="file" accept="image/*">
+    <label for="galleryPhotoInput" class="v8-upload-picker"><span>＋</span><b>وێنە هەڵبژێرە</b><small>لە گەلەری یان کامێرای مۆبایلەکەت</small></label>
     <img id="galleryPhotoPreview" class="v8-upload-preview" alt="پێشبینینی وێنە">
     <div class="form-grid">
       <div class="field"><label>ناوی کوردی *</label><input id="galleryPhotoKu" placeholder="نموونە: تیری ئاراستەی ڕاست"></div>
@@ -360,7 +360,7 @@ function fileToGalleryDataURL(file){
 }
 async function previewGalleryPhoto(input){
   const file=input?.files?.[0];if(!file)return;
-  const picker=input.closest('.v8-upload-picker'),preview=$('#galleryPhotoPreview');
+  const picker=M.querySelector('.v8-upload-picker'),preview=$('#galleryPhotoPreview');
   if(picker){picker.querySelector('b').textContent='وێنەکە ئامادە دەکرێت...';picker.style.pointerEvents='none'}
   try{
     pendingGalleryPhoto=await fileToGalleryDataURL(file);
@@ -508,7 +508,6 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();state.insta
 document.addEventListener('click',event=>{
   const action=event.target.closest('[data-gallery-action]')?.dataset.galleryAction;
   if(action==='add'){event.preventDefault();addPhotoModal()}
-  if(action==='pick'){event.preventDefault();openGalleryPhotoPicker()}
 });
 document.addEventListener('change',event=>{
   if(event.target?.id==='galleryPhotoInput')previewGalleryPhoto(event.target)
