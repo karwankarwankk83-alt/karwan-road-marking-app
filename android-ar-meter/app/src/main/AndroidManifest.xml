@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera.ar" android:required="true" />
-    <application android:theme="@style/Theme.Material3.DayNight.NoActionBar" android:label="KS AR Meter">
+    <application android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen" android:label="KS AR Meter">
         <meta-data android:name="com.google.ar.core" android:value="required" />
         <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
             <intent-filter>
