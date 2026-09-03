@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.ks.roadmarking.armeter"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.ks.roadmarking.armeter"
