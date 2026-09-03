@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.ks.roadmarking.armeter"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.ks.roadmarking.armeter"
@@ -26,7 +26,7 @@ android {
 
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2026.08.00"))
-    implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
