@@ -1,0 +1,31 @@
+name: Build KS Native AR Meter
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android-ar-meter/**'
+      - '.github/workflows/android-ar-meter.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK 37
+        run: sdkmanager "platforms;android-37" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+      - name: Build debug APK
+        working-directory: android-ar-meter
+        run: gradle :app:assembleDebug --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KS-Native-AR-Meter-debug
+          path: android-ar-meter/app/build/outputs/apk/debug/app-debug.apk
