@@ -1,0 +1,17 @@
+/* KS Road Marking App — Design section mobile polish */
+.md-head{position:sticky;top:0;z-index:8;margin:-2px -2px 14px;padding:10px 2px 8px;background:linear-gradient(180deg,rgba(9,10,10,.98),rgba(9,10,10,.90),rgba(9,10,10,0));backdrop-filter:blur(10px)}
+.md-head button{min-width:44px;min-height:44px;border-radius:14px!important;font-size:20px;display:grid;place-items:center}
+.md-head b{font-size:20px!important;line-height:1.35}.md-head small{font-size:12px!important;margin-top:3px}
+.md-search,.md-controls,.md-result{border-color:#343833!important;box-shadow:0 8px 26px rgba(0,0,0,.18)}
+.md-search{padding:15px!important}.md-search label{display:block;margin-bottom:2px}.md-search>select{min-height:50px;margin-top:9px!important;border-color:#4a4f49!important;outline:none}
+.md-search>select:focus,.md-controls input:focus{border-color:var(--yellow)!important;box-shadow:0 0 0 3px rgba(244,196,0,.12)}
+.md-controls{grid-template-columns:repeat(3,minmax(0,1fr))!important;padding:11px!important;gap:8px!important}
+.md-controls label{min-width:0;padding:10px 9px!important}.md-controls input{min-height:43px;font-weight:800;text-align:center}
+.md-result{padding:12px!important;align-items:start}.md-preview{background:#080909;border:1px solid #30332f;border-radius:16px;padding:8px;overflow:hidden}.md-preview svg{display:block;max-height:460px}
+.md-data{min-width:0}.md-data h3{font-size:19px;line-height:1.45;margin:2px 0 10px!important}.md-measures{gap:8px!important}.md-measures div{border:1px solid #242824;padding:9px!important;min-height:58px}.md-measures span{font-size:11px!important;line-height:1.4}.md-measures b{font-size:15px!important;direction:ltr;unicode-bidi:isolate}
+.md-data p{font-size:12px!important;line-height:1.85!important}.md-source{opacity:.76}
+.md-download{min-height:48px;font-size:14px;box-shadow:0 7px 20px rgba(244,196,0,.12)}.md-download:active{transform:translateY(1px)}
+.md-warning{margin:2px 0 92px!important;font-size:12px!important;padding:12px 13px!important}
+@media(max-width:760px){.md-result{grid-template-columns:1fr!important}.md-preview{order:1}.md-data{order:2}.md-controls{grid-template-columns:1fr 1fr!important}.md-controls label:first-child{grid-column:1/-1}.md-preview svg{max-height:none}.md-measures{grid-template-columns:1fr 1fr!important}}
+@media(max-width:390px){.md-head b{font-size:18px!important}.md-search,.md-controls,.md-result{border-radius:15px!important}.md-controls{gap:7px!important}.md-controls label{font-size:12px!important}.md-measures{grid-template-columns:1fr!important}.md-warning{font-size:11px!important}}
+body.light .md-head{background:linear-gradient(180deg,rgba(246,247,244,.98),rgba(246,247,244,.9),rgba(246,247,244,0))}body.light .md-search,body.light .md-controls,body.light .md-result{background:#fff!important}body.light .md-preview{background:#202322}body.light .md-controls label,body.light .md-measures div{background:#f5f6f3!important;border-color:#d7dbd4!important}body.light .md-search>select,body.light .md-controls input{background:#fff!important;color:#111!important}
