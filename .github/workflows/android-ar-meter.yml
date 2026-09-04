@@ -10,6 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -30,11 +31,22 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Build release APK
+      - name: Build installable APKs
         working-directory: android-ar-meter
-        run: gradle :app:assembleRelease --stacktrace
+        run: gradle :app:assembleDebug :app:assembleRelease --stacktrace --no-daemon
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
         with:
           name: KS-Native-AR-Meter-release
-          path: android-ar-meter/app/build/outputs/apk/release/app-release.apk
+          path: android-ar-meter/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload fallback debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KS-Native-AR-Meter-debug
+          path: android-ar-meter/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
