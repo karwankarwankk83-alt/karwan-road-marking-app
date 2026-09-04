@@ -2,23 +2,22 @@ package com.ks.roadmarking.armeter
 
 import android.opengl.Matrix
 import android.os.Bundle
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
@@ -34,345 +33,137 @@ import io.github.sceneview.ar.ARSceneView
 import java.util.Locale
 import kotlin.math.sqrt
 
-enum class MeasureStep { START, END, DONE }
+enum class MeterMode { MENU, LINEAR, AREA }
+enum class MeasurePhase { FIRST_START, FIRST_END, SECOND_START, SECOND_END, DONE }
+
+data class Pick(val pose: Pose, val plane: Plane, val screen: Offset)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MaterialTheme { NativeArMeter() } }
+        setContent { MaterialTheme { KsArMeter() } }
     }
 }
 
 @Composable
-private fun NativeArMeter() {
-    var size by remember { mutableStateOf(IntSize.Zero) }
-    var latestFrame by remember { mutableStateOf<Frame?>(null) }
+private fun KsArMeter() {
+    var mode by remember { mutableStateOf(MeterMode.MENU) }
+    var phase by remember { mutableStateOf(MeasurePhase.FIRST_START) }
+    var viewSize by remember { mutableStateOf(IntSize.Zero) }
+    var frameNow by remember { mutableStateOf<Frame?>(null) }
+    var status by remember { mutableStateOf("لەسەر شوێنی دڵخواز تاپ بکە") }
+    var firstA by remember { mutableStateOf<Pick?>(null) }
+    var firstB by remember { mutableStateOf<Pick?>(null) }
+    var secondA by remember { mutableStateOf<Pick?>(null) }
+    var secondB by remember { mutableStateOf<Pick?>(null) }
+    var lastTap by remember { mutableStateOf<Offset?>(null) }
 
-    var step by remember { mutableStateOf(MeasureStep.START) }
-    var startPose by remember { mutableStateOf<Pose?>(null) }
-    var endPose by remember { mutableStateOf<Pose?>(null) }
-    var startPlane by remember { mutableStateOf<Plane?>(null) }
+    fun dist(a: Pose, b: Pose): Double {
+        val x=(a.tx()-b.tx()).toDouble(); val y=(a.ty()-b.ty()).toDouble(); val z=(a.tz()-b.tz()).toDouble()
+        return sqrt(x*x+y*y+z*z)
+    }
 
-    var currentPlane by remember { mutableStateOf<Plane?>(null) }
-    var currentPose by remember { mutableStateOf<Pose?>(null) }
-    var ready by remember { mutableStateOf(false) }
-    var spreadCm by remember { mutableDoubleStateOf(999.0) }
-    var status by remember { mutableStateOf("کامێرا هێواش بجوڵێنە تا ڕووەکە جێگیر بێت") }
-
-    var startScreen by remember { mutableStateOf<Offset?>(null) }
-    var endScreen by remember { mutableStateOf<Offset?>(null) }
-
-    val samples = remember { ArrayDeque<Pose>() }
-    var samplePlane: Plane? by remember { mutableStateOf(null) }
-
-    fun planeHit(frame: Frame): HitResult? {
-        if (size.width <= 0 || size.height <= 0) return null
+    fun validHit(frame: Frame, p: Offset): HitResult? {
         if (frame.camera.trackingState != TrackingState.TRACKING) return null
-
-        return frame.hitTest(size.width / 2f, size.height / 2f)
-            .firstOrNull { hit ->
-                val plane = hit.trackable as? Plane ?: return@firstOrNull false
-                plane.trackingState == TrackingState.TRACKING &&
-                    plane.subsumedBy == null &&
-                    plane.isPoseInPolygon(hit.hitPose)
-            }
-    }
-
-    fun medianPose(list: Collection<Pose>): Pose? {
-        if (list.isEmpty()) return null
-        fun median(values: List<Float>): Float {
-            val s = values.sorted()
-            val n = s.size
-            return if (n % 2 == 1) s[n / 2] else (s[n / 2 - 1] + s[n / 2]) / 2f
+        return frame.hitTest(p.x, p.y).firstOrNull { h ->
+            val pl=h.trackable as? Plane ?: return@firstOrNull false
+            pl.trackingState==TrackingState.TRACKING && pl.subsumedBy==null && pl.isPoseInPolygon(h.hitPose)
         }
-        val x = median(list.map { it.tx() })
-        val y = median(list.map { it.ty() })
-        val z = median(list.map { it.tz() })
-        return Pose.makeTranslation(x, y, z)
     }
 
-    fun distance(a: Pose, b: Pose): Double {
-        val dx = (a.tx() - b.tx()).toDouble()
-        val dy = (a.ty() - b.ty()).toDouble()
-        val dz = (a.tz() - b.tz()).toDouble()
-        return sqrt(dx * dx + dy * dy + dz * dz)
+    fun reset(m: MeterMode = mode) {
+        mode=m; phase=MeasurePhase.FIRST_START; firstA=null; firstB=null; secondA=null; secondB=null; lastTap=null
+        status=if(m==MeterMode.MENU) "" else "خاڵی سەرەتا: لەسەر شوێنی دڵخواز تاپ بکە"
     }
 
-    fun spreadMeters(center: Pose?, list: Collection<Pose>): Double {
-        center ?: return 999.0
-        if (list.isEmpty()) return 999.0
-        return list.maxOf { distance(center, it) }
-    }
-
-    fun projectPose(pose: Pose?, frame: Frame): Offset? {
-        pose ?: return null
-        if (size.width <= 0 || size.height <= 0) return null
-
-        val view = FloatArray(16)
-        val proj = FloatArray(16)
-        val vp = FloatArray(16)
-        val world = floatArrayOf(pose.tx(), pose.ty(), pose.tz(), 1f)
-        val clip = FloatArray(4)
-
-        frame.camera.getViewMatrix(view, 0)
-        frame.camera.getProjectionMatrix(proj, 0, 0.05f, 100f)
-        Matrix.multiplyMM(vp, 0, proj, 0, view, 0)
-        Matrix.multiplyMV(clip, 0, vp, 0, world, 0)
-        if (clip[3] <= 0.0001f) return null
-
-        val nx = clip[0] / clip[3]
-        val ny = clip[1] / clip[3]
-        return Offset(
-            (nx * 0.5f + 0.5f) * size.width,
-            (1f - (ny * 0.5f + 0.5f)) * size.height
-        )
-    }
-
-    fun resetMeasurement() {
-        step = MeasureStep.START
-        startPose = null
-        endPose = null
-        startPlane = null
-        startScreen = null
-        endScreen = null
-        samples.clear()
-        samplePlane = null
-        currentPose = null
-        ready = false
-        status = "کامێرا هێواش بجوڵێنە تا ڕووەکە جێگیر بێت"
-    }
-
-    val shownDistance = when {
-        startPose != null && step == MeasureStep.END && currentPose != null && currentPlane == startPlane ->
-            distance(startPose!!, currentPose!!)
-        startPose != null && endPose != null -> distance(startPose!!, endPose!!)
-        else -> 0.0
-    }
-
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .onSizeChanged { size = it }
-    ) {
-        ARSceneView(
-            modifier = Modifier.fillMaxSize(),
-            planeRenderer = false,
-            sessionConfiguration = { session, config ->
-                config.planeFindingMode = Config.PlaneFindingMode.HORIZONTAL_AND_VERTICAL
-                if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
-                    config.depthMode = Config.DepthMode.AUTOMATIC
-                }
-                config.updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
-            },
-            onSessionUpdated = { _, frame ->
-                latestFrame = frame
-
-                val hit = planeHit(frame)
-                val plane = hit?.trackable as? Plane
-
-                if (hit == null || plane == null) {
-                    samples.clear()
-                    samplePlane = null
-                    currentPlane = null
-                    currentPose = null
-                    ready = false
-                    spreadCm = 999.0
-                    status = if (frame.camera.trackingState == TrackingState.TRACKING) {
-                        "ڕووەکە هێشتا جێگیر نییە؛ کامێرا هێواش بجوڵێنە"
-                    } else {
-                        "AR هێشتا جێگیر نەبووە؛ کامێرا هێواش بجوڵێنە"
-                    }
-                } else {
-                    if (samplePlane != plane) {
-                        samples.clear()
-                        samplePlane = plane
-                    }
-
-                    samples.addLast(hit.hitPose)
-                    while (samples.size > 12) samples.removeFirst()
-
-                    val median = medianPose(samples)
-                    val spread = spreadMeters(median, samples)
-                    currentPlane = plane
-                    currentPose = median
-                    spreadCm = spread * 100.0
-
-                    val enoughSamples = samples.size >= 8
-                    val stableAim = spread <= 0.018
-                    val samePlaneOk = step != MeasureStep.END || startPlane == plane
-                    ready = enoughSamples && stableAim && samePlaneOk
-
-                    status = when {
-                        step == MeasureStep.END && startPlane != plane ->
-                            "کۆتایی دەبێت لە هەمان ڕووەکی خاڵی سەرەتا بێت"
-                        !enoughSamples -> "هەندێک چرکە ڕابگرە بۆ جێگیرکردنی خاڵ"
-                        !stableAim -> "کامێرا/نیشانەکە زۆر دەجوڵێت؛ کەمێک جێگیری بکە"
-                        step == MeasureStep.START -> "ئامادەیە ✓ خاڵی سەرەتا تۆمار بکە"
-                        step == MeasureStep.END -> "ئامادەیە ✓ خاڵی کۆتایی تۆمار بکە"
-                        else -> "پێوانە تەواو بوو ✓"
-                    }
-                }
-
-                if (startPose != null) startScreen = projectPose(startPose, frame)
-                if (endPose != null) endScreen = projectPose(endPose, frame)
+    fun acceptTap(p: Offset) {
+        if (mode==MeterMode.MENU || phase==MeasurePhase.DONE) return
+        val f=frameNow ?: run { status="AR هێشتا ئامادە نییە"; return }
+        val hit=validHit(f,p) ?: run { status="ئەم خاڵە ڕووەکی جێگیر نییە؛ شوێنێکی ڕوونتر تاپ بکە"; return }
+        val pick=Pick(hit.hitPose, hit.trackable as Plane, p); lastTap=p
+        when(phase) {
+            MeasurePhase.FIRST_START -> { firstA=pick; phase=MeasurePhase.FIRST_END; status="خاڵی کۆتایی تاپ بکە" }
+            MeasurePhase.FIRST_END -> {
+                if(firstA?.plane != pick.plane){ status="کۆتایی لە هەمان ڕووەک دابنێ"; return }
+                val d=dist(firstA!!.pose,pick.pose)
+                if(d<0.01 || d>50){ status="پێوانەکە قبوڵ نەکرا؛ دووبارە خاڵی کۆتایی تاپ بکە"; return }
+                firstB=pick
+                if(mode==MeterMode.LINEAR){ phase=MeasurePhase.DONE; status="پێوانە تەواو بوو ✓" }
+                else { phase=MeasurePhase.SECOND_START; status="درێژی تۆمارکرا ✓ ئێستا خاڵی سەرەتای پانی تاپ بکە" }
             }
-        )
-
-        Canvas(Modifier.fillMaxSize()) {
-            val center = Offset(size.width / 2f, size.height / 2f)
-            val crossColor = if (ready) Color(0xFF55E58D) else Color(0xFFFFD45A)
-
-            drawCircle(crossColor.copy(alpha = 0.16f), radius = 28f, center = center)
-            drawLine(crossColor, Offset(center.x - 18f, center.y), Offset(center.x + 18f, center.y), 3f)
-            drawLine(crossColor, Offset(center.x, center.y - 18f), Offset(center.x, center.y + 18f), 3f)
-            drawCircle(crossColor, radius = 4f, center = center)
-
-            val s = startScreen
-            val e = when {
-                step == MeasureStep.END && ready -> center
-                endScreen != null -> endScreen
-                else -> null
+            MeasurePhase.SECOND_START -> { secondA=pick; phase=MeasurePhase.SECOND_END; status="خاڵی کۆتایی پانی تاپ بکە" }
+            MeasurePhase.SECOND_END -> {
+                if(secondA?.plane != pick.plane){ status="کۆتایی پانی لە هەمان ڕووەک دابنێ"; return }
+                val d=dist(secondA!!.pose,pick.pose)
+                if(d<0.01 || d>50){ status="پانی قبوڵ نەکرا؛ دووبارە تاپ بکە"; return }
+                secondB=pick; phase=MeasurePhase.DONE; status="ڕووبەر هەژمارکرا ✓"
             }
-
-            if (s != null && e != null) {
-                drawLine(Color.White.copy(alpha = 0.82f), s, e, strokeWidth = 4f)
-            }
-            if (s != null) {
-                drawCircle(Color(0xFF18D276), radius = 12f, center = s)
-                drawCircle(Color.White, radius = 16f, center = s, style = Stroke(width = 3f))
-            }
-            if (endScreen != null) {
-                drawCircle(Color(0xFFFF4B55), radius = 12f, center = endScreen!!)
-                drawCircle(Color.White, radius = 16f, center = endScreen!!, style = Stroke(width = 3f))
-            }
+            MeasurePhase.DONE -> Unit
         }
+    }
 
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 22.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xDD101514), RoundedCornerShape(22.dp))
-                    .padding(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("KS AR Meter V2", color = Color(0xFF9FF0C0), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(4.dp))
-                    Text("درێژی", color = Color.White, fontSize = 18.sp)
-                    Text(
-                        String.format(Locale.US, "%.3f m", shownDistance),
-                        color = Color.White,
-                        fontSize = 42.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        if (shownDistance < 1.0) String.format(Locale.US, "%.1f cm", shownDistance * 100.0) else "",
-                        color = Color(0xFFB8C8C2),
-                        fontSize = 16.sp
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(status, color = Color(0xFFD7E0DD), fontSize = 13.sp)
-                    if (spreadCm < 99.0) {
-                        Text(
-                            String.format(Locale.US, "جێگیری خاڵ: ±%.1f cm", spreadCm),
-                            color = if (ready) Color(0xFF8EE7B2) else Color(0xFFFFD166),
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
-        }
+    val length=if(firstA!=null&&firstB!=null) dist(firstA!!.pose,firstB!!.pose) else 0.0
+    val width=if(secondA!=null&&secondB!=null) dist(secondA!!.pose,secondB!!.pose) else 0.0
+    val area=length*width
 
-        Column(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            val buttonText = when (step) {
-                MeasureStep.START -> "① خاڵی سەرەتا تۆمار بکە"
-                MeasureStep.END -> "② خاڵی کۆتایی تۆمار بکە"
-                MeasureStep.DONE -> "✓ پێوانە تەواو بوو"
-            }
-
-            Button(
-                onClick = {
-                    val pose = currentPose
-                    val plane = currentPlane
-                    if (!ready || pose == null || plane == null) return@Button
-
-                    when (step) {
-                        MeasureStep.START -> {
-                            startPose = pose
-                            startPlane = plane
-                            endPose = null
-                            step = MeasureStep.END
-                            samples.clear()
-                            samplePlane = plane
-                            ready = false
-                            status = "خاڵی سەرەتا تۆمارکرا ✓ نیشانەکە بەرەو خاڵی کۆتایی ببە"
-                        }
-                        MeasureStep.END -> {
-                            if (plane != startPlane) {
-                                status = "هەمان ڕووەک هەڵبژێرە؛ پێوانە ڕەتکرایەوە"
-                                return@Button
-                            }
-                            val d = distance(startPose!!, pose)
-                            if (d < 0.01) {
-                                status = "خاڵی کۆتایی زۆر نزیکە؛ شوێنێکی تر هەڵبژێرە"
-                                return@Button
-                            }
-                            if (d > 50.0) {
-                                status = "پێوانەکە نامۆیە (>50m) و ڕەتکرایەوە؛ دووبارە بکەرەوە"
-                                return@Button
-                            }
-                            endPose = pose
-                            step = MeasureStep.DONE
-                            status = "پێوانە تەواو بوو ✓ سەوز = سەرەتا، سور = کۆتایی"
-                        }
-                        MeasureStep.DONE -> Unit
-                    }
+    Box(Modifier.fillMaxSize().background(Color(0xFF080B0A)).onSizeChanged{viewSize=it}) {
+        if(mode!=MeterMode.MENU) {
+            ARSceneView(
+                modifier=Modifier.fillMaxSize().pointerInteropFilter { e ->
+                    if(e.action==MotionEvent.ACTION_UP){ acceptTap(Offset(e.x,e.y)); true } else false
                 },
-                enabled = ready && step != MeasureStep.DONE,
-                modifier = Modifier.fillMaxWidth().height(64.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF168F57),
-                    disabledContainerColor = Color(0xFF38413E)
-                ),
-                shape = RoundedCornerShape(18.dp)
-            ) {
-                Text(buttonText, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                planeRenderer=false,
+                sessionConfiguration={ session,config ->
+                    config.planeFindingMode=Config.PlaneFindingMode.HORIZONTAL_AND_VERTICAL
+                    if(session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) config.depthMode=Config.DepthMode.AUTOMATIC
+                    config.updateMode=Config.UpdateMode.LATEST_CAMERA_IMAGE
+                },
+                onSessionUpdated={_,frame->frameNow=frame}
+            )
+            Canvas(Modifier.fillMaxSize()) {
+                fun mark(p: Pick?, c: Color){ p?.let { drawCircle(c.copy(alpha=.22f),24f,it.screen); drawCircle(c,10f,it.screen); drawCircle(Color.White,15f,it.screen,style=Stroke(3f)) } }
+                fun line(a:Pick?,b:Pick?,c:Color){ if(a!=null&&b!=null) drawLine(c,a.screen,b.screen,5f) }
+                line(firstA,firstB,Color.White); line(secondA,secondB,Color(0xFFFFD54F))
+                mark(firstA,Color(0xFF20D47A)); mark(firstB,Color(0xFFFF4D5A)); mark(secondA,Color(0xFF20D47A)); mark(secondB,Color(0xFFFF4D5A))
+                lastTap?.let { drawCircle(Color.White.copy(alpha=.35f),32f,it,style=Stroke(2f)) }
             }
+        }
 
-            OutlinedButton(
-                onClick = { resetMeasurement() },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("دووبارە / Reset", color = Color.White)
+        if(mode==MeterMode.MENU) {
+            Column(Modifier.fillMaxSize().padding(22.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally){
+                Text("KS",fontSize=48.sp,fontWeight=FontWeight.Black,color=Color(0xFFFFC928)); Text("AR METER",fontSize=18.sp,color=Color.White)
+                Spacer(Modifier.height(38.dp)); Text("جۆری پێوانە هەڵبژێرە",color=Color.White,fontSize=20.sp,fontWeight=FontWeight.Bold); Spacer(Modifier.height(18.dp))
+                ModeCard("①  مەتر توڵ","پێوانەی ئاسایی لە خاڵی سەرەتا بۆ کۆتایی","m") { reset(MeterMode.LINEAR) }
+                Spacer(Modifier.height(14.dp)); ModeCard("②  مەتر دووجا","یەکەم درێژی، پاشان پانی؛ خۆکارانە ڕووبەر","m²") { reset(MeterMode.AREA) }
             }
+        } else {
+            Column(Modifier.fillMaxWidth().padding(16.dp).align(Alignment.TopCenter),horizontalAlignment=Alignment.CenterHorizontally){
+                Card(colors=CardDefaults.cardColors(containerColor=Color(0xE8101513)),shape=RoundedCornerShape(22.dp)){
+                    Column(Modifier.fillMaxWidth().padding(15.dp),horizontalAlignment=Alignment.CenterHorizontally){
+                        Text(if(mode==MeterMode.LINEAR) "مەتر توڵ" else "مەتر دووجا",color=Color(0xFFFFD54F),fontWeight=FontWeight.Bold)
+                        if(mode==MeterMode.LINEAR) Text(String.format(Locale.US,"%.3f m",length),fontSize=38.sp,color=Color.White,fontWeight=FontWeight.Bold)
+                        else {
+                            Text(String.format(Locale.US,"درێژی %.3f m  ×  پانی %.3f m",length,width),color=Color.White,fontSize=16.sp)
+                            Text(String.format(Locale.US,"%.3f m²",area),fontSize=36.sp,color=Color.White,fontWeight=FontWeight.Bold)
+                        }
+                        Text(status,color=Color(0xFFD5DFDB),fontSize=13.sp)
+                    }
+                }
+            }
+            Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp),horizontalArrangement=Arrangement.spacedBy(10.dp)){
+                OutlinedButton(onClick={reset()},modifier=Modifier.weight(1f)){Text("دووبارە")}
+                Button(onClick={reset(MeterMode.MENU)},modifier=Modifier.weight(1f)){Text("سەرەتا")}
+            }
+        }
+    }
+}
 
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xC9141817), RoundedCornerShape(14.dp))
-                    .padding(horizontal = 12.dp, vertical = 9.dp)
-            ) {
-                Text(
-                    "پێش کاری پڕۆژە: یەکجار بە قیاسی ناسراوی 0.50m یان 1.00m تاقی بکەرەوە. ئەگەر ئەنجام جێگیر نەبوو، پێوانە قبوڵ مەکە.",
-                    color = Color(0xFFD4DDD9),
-                    fontSize = 11.sp
-                )
-            }
+@Composable
+private fun ModeCard(title:String, subtitle:String, unit:String, onClick:()->Unit){
+    Card(Modifier.fillMaxWidth().clickable(onClick=onClick),colors=CardDefaults.cardColors(containerColor=Color(0xFF151B19)),shape=RoundedCornerShape(22.dp)){
+        Row(Modifier.fillMaxWidth().padding(22.dp),verticalAlignment=Alignment.CenterVertically){
+            Column(Modifier.weight(1f)){Text(title,color=Color.White,fontSize=22.sp,fontWeight=FontWeight.Bold);Spacer(Modifier.height(5.dp));Text(subtitle,color=Color(0xFFAFBBB7),fontSize=13.sp)}
+            Text(unit,color=Color(0xFFFFD54F),fontSize=27.sp,fontWeight=FontWeight.Black)
         }
     }
 }
