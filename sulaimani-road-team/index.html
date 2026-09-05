@@ -1,1 +1,154 @@
-<!doctype html><html lang="ckb" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b4f86"><title>کار و چالاکییەکانی تیمی هێڵکاری و بۆیاخ</title><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="styles.css"></head><body><div class="app"><header><div><small>بەڕێوەبەرایەتی هاتوچۆی سلێمانی</small><h1>کار و چالاکییەکانی تیمی هێڵکاری و بۆیاخ</h1></div><button id="assistantBtn">یاریدەدەری زیرەک ✦</button></header><main><section class="hero"><h2>بەخێربێیت</h2><p>تۆمارکردن، ڕاپۆرت و بەدواداچوونی کاری ڕۆژانەی تیم</p><div class="roles"><span>تیم‌لیدەر</span><span>سەرۆکی هۆبە</span><span>بەڕێوەبەر</span></div></section><section class="grid"><button data-view="new">＋ زەرعەی نوێ</button><button data-view="reports">ڕاپۆرتەکان</button><button data-view="materials">ماددەکان</button><button data-view="team">ستافی تیم</button><button data-view="map">نەخشە و GPS</button><button data-view="stats">ئامار</button></section><section id="panel" class="panel"><h3>زەرعەی نوێ</h3><form id="workForm"><label>بەروار<input type="date" name="date"></label><label>شوێنی کار<input name="location" placeholder="ناوی شەقام / ناوچە"></label><label>جۆری کار<select name="type"><option>هێڵکاری</option><option>زێبرا</option><option>نیشانەی سەر شەقام</option><option>بۆیاخی تایبەت</option></select></label><div class="two"><label>درێژی (m)<input type="number" step="0.01" name="length"></label><label>پانی (cm)<input type="number" step="0.1" name="width"></label></div><label>تێبینی<textarea name="note" rows="4"></textarea></label><button class="primary" type="submit">پاشەکەوتکردن</button></form></section><section class="materials"><h3>ماددە و کەرەستەکان</h3><div id="materialList"></div></section></main><nav><button>ژینگەیەکی پاکتر</button><button>شەقامێکی جوانتر</button><button>کوالێتی</button><button>تیمی کار</button><button>سەلامەتی</button></nav></div><div id="assistant" class="assistant hidden"><div class="assistant-card"><button id="closeAssistant">×</button><h3>یاریدەدەری زیرەک</h3><p>ئامادەم بۆ یارمەتی دان لە تۆمارکردن، ژماردن و ڕاپۆرت.</p><div id="chat"></div><div class="chatbar"><input id="chatInput" placeholder="پرسیارەکەت بنووسە..."><button id="sendChat">ناردن</button></div></div></div><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="ckb" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b4f86">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="هێڵکاری و بۆیاخ">
+  <title>کار و چالاکییەکانی تیمی هێڵکاری و بۆیاخ</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div>
+      <small>بەڕێوەبەرایەتی هاتوچۆی سلێمانی</small>
+      <div class="department">ئەندازەی هاتوچۆ</div>
+      <h1>کار و چالاکییەکانی تیمی هێڵکاری و بۆیاخ</h1>
+    </div>
+    <button id="assistantBtn" class="assistant-launch">یاریدەدەری زیرەک ✦</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <span class="eyebrow">سیستەمی تۆمار و پەسەندکردنی کار</span>
+        <h2>هەموو زانیارییەکان بۆ بینین کراوەن</h2>
+        <p>زیادکردن، گۆڕین و سڕینەوە تەنها بە کۆدی دەسەڵاتی سەرپەرشتیاری بەرنامە ئەنجام دەدرێت.</p>
+      </div>
+      <div class="roles">
+        <span>تیم‌لیدەر / سەرپەرشتیار</span>
+        <span>سەرۆکی هۆبە</span>
+        <span>بەڕێوەبەر</span>
+      </div>
+    </section>
+
+    <section class="grid dashboard">
+      <button data-section="newRecord">＋ تۆماری نوێ</button>
+      <button data-section="records">تۆمارەکان</button>
+      <button data-section="materials">ماددەکان</button>
+      <button data-section="stats">ئامار</button>
+      <button data-section="map">نەخشە و GPS</button>
+      <button data-section="settings">ڕێکخستن</button>
+    </section>
+
+    <section id="newRecord" class="panel section-card">
+      <div class="section-head">
+        <div><span class="kicker">تۆماری کار</span><h3>کار و چالاکیی ڕۆژانە</h3></div>
+        <span id="editLockBadge" class="badge locked">🔒 پارێزراو</span>
+      </div>
+      <button id="unlockEdit" class="secondary full">🔑 کردنەوەی دەسەڵاتی تۆمارکردن</button>
+      <form id="workForm" class="locked-form">
+        <fieldset id="workFields" disabled>
+          <div class="two">
+            <label>بەروار<input type="date" name="date" required></label>
+            <label>ژمارەی تۆمار<input name="recordNo" readonly></label>
+          </div>
+          <div class="two">
+            <label>کاتی دەستپێک<input type="time" name="startTime"></label>
+            <label>کاتی کۆتایی<input type="time" name="endTime"></label>
+          </div>
+          <label>شوێنی کار<input name="location" placeholder="ناوی شەقام / ناوچە" required></label>
+          <label>جۆری کار<select name="type"><option>هێڵکاری</option><option>زێبرا</option><option>نیشانەی سەر شەقام</option><option>فلکە / جەزیرە</option><option>بۆیاخی تایبەت</option></select></label>
+          <div class="two">
+            <label>جۆری بۆیاخ<select name="paintType"><option>بۆیاخی سارد</option><option>سێرمۆ / سێرۆ</option><option>2K</option><option>ئەپۆکسی</option></select></label>
+            <label>ڕەنگ<select name="color"><option>سپی</option><option>زەرد</option><option>سور</option><option>شین</option><option>ڕەش</option></select></label>
+          </div>
+          <div class="three">
+            <label>درێژی (m)<input type="number" step="0.01" min="0" name="length"></label>
+            <label>پانی (cm)<input type="number" step="0.1" min="0" name="width"></label>
+            <label>ڕووبەر (m²)<input type="number" step="0.01" min="0" name="area"></label>
+          </div>
+          <div class="two">
+            <label>GPS ـی پانی<input name="lat" inputmode="decimal" placeholder="Latitude"></label>
+            <label>GPS ـی درێژی<input name="lng" inputmode="decimal" placeholder="Longitude"></label>
+          </div>
+          <button type="button" id="getGps" class="secondary">📍 وەرگرتنی GPS</button>
+
+          <h4>ماددە و کەرەستەکان</h4>
+          <div id="materialList"></div>
+
+          <h4>ستاف و ئامێر</h4>
+          <label>ناوی ئەندامانی تیم<textarea name="staff" rows="2" placeholder="ناوەکان بە کاما جیا بکەرەوە"></textarea></label>
+          <label>ئامێر / ئۆتۆمبێل<textarea name="equipment" rows="2"></textarea></label>
+
+          <h4>وێنەکانی کار</h4>
+          <div class="three photo-grid">
+            <label>پێش کار<input type="file" accept="image/*" capture="environment" name="photoBefore"></label>
+            <label>لەکاتی کار<input type="file" accept="image/*" capture="environment" name="photoDuring"></label>
+            <label>دوای کار<input type="file" accept="image/*" capture="environment" name="photoAfter"></label>
+          </div>
+
+          <label>تێبینی<textarea name="note" rows="4"></textarea></label>
+          <div class="action-row">
+            <button class="primary" type="submit">پاشەکەوتکردن</button>
+            <button class="secondary" type="button" id="submitApproval">ناردن بۆ پەسەندکردن</button>
+          </div>
+        </fieldset>
+      </form>
+    </section>
+
+    <section id="records" class="panel section-card">
+      <div class="section-head"><div><span class="kicker">ئەرشیف</span><h3>تۆمارەکان</h3></div><input id="recordSearch" class="compact-search" placeholder="گەڕان..."></div>
+      <div id="recordList" class="record-list"></div>
+    </section>
+
+    <section id="materials" class="panel section-card">
+      <h3>کۆی ماددە بەکارهاتووەکان</h3>
+      <div id="materialTotals" class="stat-list"></div>
+    </section>
+
+    <section id="stats" class="panel section-card">
+      <h3>ئاماری گشتی</h3>
+      <div class="stats-grid">
+        <div class="stat"><strong id="statRecords">0</strong><span>تۆمار</span></div>
+        <div class="stat"><strong id="statLength">0</strong><span>m درێژی</span></div>
+        <div class="stat"><strong id="statArea">0</strong><span>m² ڕووبەر</span></div>
+        <div class="stat"><strong id="statApproved">0</strong><span>پەسەندکراو</span></div>
+      </div>
+    </section>
+
+    <section id="map" class="panel section-card">
+      <h3>نەخشە و GPS</h3>
+      <p class="muted">تۆمارە GPS ـدارەکان لێرە پیشان دەدرێن. نەخشەی ئۆنلاین لە هەنگاوی backend زیاد دەکرێت.</p>
+      <div id="gpsList" class="record-list"></div>
+    </section>
+
+    <section id="settings" class="panel section-card">
+      <h3>ڕێکخستنی دەسەڵات</h3>
+      <p class="muted">هیچ Login ـێک نییە. کۆدەکان تەنها لە کاتی کارێکی پارێزراودا داوا دەکرێن.</p>
+      <div class="settings-actions">
+        <button id="setAdminPin" class="secondary">کۆدی دەستکاری</button>
+        <button id="setSupervisorPin" class="secondary">کۆدی سەرپەرشتیار</button>
+        <button id="setManagerPin" class="secondary">کۆدی بەڕێوەبەر</button>
+      </div>
+      <div class="credit">سەرپەرشتاری بەرنامە کاروان سعید نجم</div>
+    </section>
+  </main>
+
+  <nav class="values-nav">
+    <button>ژینگەیەکی پاکتر</button><button>شەقامێکی جوانتر</button><button>کوالێتی</button><button>تیمی کار</button><button>سەلامەتی</button>
+  </nav>
+</div>
+
+<div id="pinModal" class="modal hidden"><div class="modal-card"><button class="modal-close" data-close="pinModal">×</button><h3 id="pinTitle">کۆدی دەسەڵات</h3><p id="pinHelp" class="muted"></p><input id="pinInput" type="password" inputmode="numeric" maxlength="12" placeholder="کۆد بنووسە"><button id="pinConfirm" class="primary full">پشتڕاستکردنەوە</button></div></div>
+
+<div id="approvalModal" class="modal hidden"><div class="modal-card"><button class="modal-close" data-close="approvalModal">×</button><h3>پەسەندکردنی تۆمار</h3><p id="approvalRecordTitle" class="muted"></p><label>دەسەڵات<select id="approvalRole"><option value="supervisor">سەرپەرشتیار</option><option value="manager">بەڕێوەبەر</option></select></label><label>کۆد<input id="approvalPin" type="password" inputmode="numeric"></label><label>تێبینی<textarea id="approvalComment" rows="3"></textarea></label><div class="action-row"><button id="approveBtn" class="primary">پەسەندکردن</button><button id="returnBtn" class="danger">گەڕاندنەوە</button></div></div></div>
+
+<div id="assistant" class="assistant hidden"><div class="assistant-card"><button id="closeAssistant">×</button><h3>یاریدەدەری زیرەک</h3><p>ئامادەم بۆ یارمەتی دان لە تۆمارکردن، ژماردن و ڕاپۆرت.</p><div id="chat"></div><div class="chatbar"><input id="chatInput" placeholder="پرسیارەکەت بنووسە..."><button id="sendChat">ناردن</button></div></div></div>
+<script src="app.js"></script>
+</body>
+</html>
