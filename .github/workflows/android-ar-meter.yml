@@ -27,26 +27,33 @@ jobs:
       - name: Install Android SDK 36
         run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
+      - name: Create CI signing keystore
+        run: |
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair -v \
+            -keystore "$HOME/.android/debug.keystore" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -keyalg RSA -keysize 2048 -validity 10000
+
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
 
-      - name: Build installable APKs
+      - name: Build signed release APK
         working-directory: android-ar-meter
-        run: gradle :app:assembleDebug :app:assembleRelease --stacktrace --no-daemon
+        run: gradle :app:assembleRelease --stacktrace --no-daemon
 
-      - name: Upload release APK
+      - name: Verify APK signature
+        run: |
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs android-ar-meter/app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload signed installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: KS-Native-AR-Meter-release
-          path: android-ar-meter/app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload fallback debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: KS-Native-AR-Meter-debug
-          path: android-ar-meter/app/build/outputs/apk/debug/*.apk
+          name: KS-Native-AR-Meter-signed-installable
+          path: android-ar-meter/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
