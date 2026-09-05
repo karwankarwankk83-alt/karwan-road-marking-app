@@ -1,9 +1,21 @@
-const materials=['بۆیاخ','گڵاسپید','هاردنەر','تەنەر','تیپ','ڕۆڵە','فڵچە','گاز','بەنزین','گریس','غاز'];
-const units=['kg','L','دانە','ڕۆڵ'];
+const materials=[
+{name:'بۆیاخ',unit:'سەتڵ/قوتو'},
+{name:'گڵاسپید',unit:'kg'},
+{name:'هاردنەر',unit:'kg'},
+{name:'تەنەر',unit:'L'},
+{name:'تیپ',unit:'دانە'},
+{name:'ڕۆڵە',unit:'دانە'},
+{name:'فڵچە',unit:'دانە'},
+{name:'گاز',unit:'L'},
+{name:'بەنزین',unit:'L'},
+{name:'گریس',unit:'kg'},
+{name:'غاز',unit:'L'}
+];
+const units=['kg','L','دانە','ڕۆڵ','سەتڵ/قوتو','کیسە'];
 const statusText={draft:'پاشەکەوتکراو',submitted:'چاوەڕێی پەسەند',approved:'پەسەندکراو',returned:'گەڕێندراوەتەوە'};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let editingId=null,approvalRecordId=null,editUnlockedUntil=0,pendingPinAction=null;
-function materialRows(){ $('#materialList').innerHTML='';materials.forEach((m,i)=>{const r=document.createElement('div');r.className='material-row';r.innerHTML=`<div class="material-name">${m}</div><input type="number" step="0.01" min="0" name="mat-${i}" placeholder="بڕ"><select name="unit-${i}">${units.map(u=>`<option>${u}</option>`).join('')}</select>`;$('#materialList').appendChild(r)})} materialRows();
+function materialRows(){ $('#materialList').innerHTML='';materials.forEach((m,i)=>{const r=document.createElement('div');r.className='material-row';r.innerHTML=`<div class="material-name">${m.name}</div><input type="number" step="0.01" min="0" name="mat-${i}" placeholder="بڕ"><select name="unit-${i}">${units.map(u=>`<option${u===m.unit?' selected':''}>${u}</option>`).join('')}</select>`;$('#materialList').appendChild(r)})} materialRows();
 const dbPromise=new Promise((resolve,reject)=>{const req=indexedDB.open('sulaimani-road-team',2);req.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains('records')){const s=db.createObjectStore('records',{keyPath:'id'});s.createIndex('date','date');s.createIndex('status','status')}};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});
 async function allRecords(){const db=await dbPromise;return new Promise((res,rej)=>{const r=db.transaction('records').objectStore('records').getAll();r.onsuccess=()=>res(r.result.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.createdAt-a.createdAt));r.onerror=()=>rej(r.error)})}
 async function getRecord(id){const db=await dbPromise;return new Promise((res,rej)=>{const r=db.transaction('records').objectStore('records').get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
@@ -20,14 +32,14 @@ $('#unlockEdit').onclick=()=>{if(editIsUnlocked())return setEditState(false);if(
 function today(){return new Date().toISOString().slice(0,10)} function nextRecordNo(date=today()){return `${date.replaceAll('-','')}-${String(Date.now()).slice(-4)}`}
 function resetForm(){editingId=null;$('#workForm').reset();$('[name=date]').value=today();$('[name=recordNo]').value=nextRecordNo();materialRows();$('#approvalSummary').innerHTML=''} resetForm();setEditState(false);
 $('#newDay').onclick=()=>{resetForm();$('#dailyPage').scrollIntoView({behavior:'smooth'});if(!editIsUnlocked())$('#unlockEdit').click()};
-function collectMaterials(){return materials.map((name,i)=>({name,quantity:Number($(`[name="mat-${i}"]`).value||0),unit:$(`[name="unit-${i}"]`).value})).filter(x=>x.quantity>0)}
+function collectMaterials(){return materials.map((m,i)=>({name:m.name,quantity:Number($(`[name="mat-${i}"]`).value||0),unit:$(`[name="unit-${i}"]`).value})).filter(x=>x.quantity>0)}
 async function filesFromForm(fd){const out={};for(const k of ['photoBefore','photoDuring','photoAfter']){const f=fd.get(k);if(f&&f.size)out[k]={name:f.name,type:f.type,size:f.size,blob:f}}return out}
 async function buildRecord(statusOverride){const fd=new FormData($('#workForm')),old=editingId?await getRecord(editingId):null,photos=await filesFromForm(fd);return{id:editingId||crypto.randomUUID(),recordNo:fd.get('recordNo')||nextRecordNo(fd.get('date')),date:fd.get('date'),startTime:fd.get('startTime'),endTime:fd.get('endTime'),location:fd.get('location'),type:fd.get('type'),paintType:fd.get('paintType'),color:fd.get('color'),length:Number(fd.get('length')||0),width:Number(fd.get('width')||0),area:Number(fd.get('area')||0),lat:fd.get('lat'),lng:fd.get('lng'),staff:fd.get('staff'),equipment:fd.get('equipment'),note:fd.get('note'),materials:collectMaterials(),photos:{...(old?.photos||{}),...photos},status:statusOverride||old?.status||'draft',approvals:statusOverride==='submitted'?[]:(old?.approvals||[]),createdAt:old?.createdAt||Date.now(),updatedAt:Date.now()}}
 $('#workForm').onsubmit=async e=>{e.preventDefault();if(!editIsUnlocked())return alert('کۆدی دەسەڵات پێویستە');const r=await buildRecord();if(editingId&&r.status==='approved'){r.status='draft';r.approvals=[]}await putRecord(r);alert('پەڕەکە پارێزرا');resetForm();setEditState(false);await refresh()};
 $('#submitApproval').onclick=async()=>{if(!editIsUnlocked())return alert('کۆدی دەسەڵات پێویستە');const r=await buildRecord('submitted');await putRecord(r);alert('پەڕەکە نێردرا بۆ پەسەندکردن');resetForm();setEditState(false);await refresh()};
 $('#getGps').onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{$('[name=lat]').value=p.coords.latitude.toFixed(6);$('[name=lng]').value=p.coords.longitude.toFixed(6)},()=>alert('ڕێگەپێدانی Location بپشکنە')):alert('GPS بەردەست نییە');
 function showApproval(r){$('#approvalSummary').innerHTML=(r.approvals||[]).length?`<b>پەسەندکردن:</b> `+r.approvals.map(a=>`${a.role==='manager'?'بەڕێوەبەر':'سەرپەرشتیار'} — ${a.action==='approve'?'پەسەندکرا':'گەڕێندرایەوە'}`).join(' · '):''}
-async function loadPage(id,needEdit=false){const r=await getRecord(id);if(!r)return;editingId=id;for(const k of ['recordNo','date','startTime','endTime','location','type','paintType','color','length','width','area','lat','lng','staff','equipment','note']){const el=$(`[name="${k}"]`);if(el)el.value=r[k]??''}materialRows();(r.materials||[]).forEach(x=>{const i=materials.indexOf(x.name);if(i>=0){$(`[name="mat-${i}"]`).value=x.quantity;$(`[name="unit-${i}"]`).value=x.unit}});showApproval(r);$('#dailyPage').scrollIntoView({behavior:'smooth'});if(needEdit&&!editIsUnlocked())$('#unlockEdit').click()}
+async function loadPage(id,needEdit=false){const r=await getRecord(id);if(!r)return;editingId=id;for(const k of ['recordNo','date','startTime','endTime','location','type','paintType','color','length','width','area','lat','lng','staff','equipment','note']){const el=$(`[name="${k}"]`);if(el)el.value=r[k]??''}materialRows();(r.materials||[]).forEach(x=>{const i=materials.findIndex(m=>m.name===x.name);if(i>=0){$(`[name="mat-${i}"]`).value=x.quantity;$(`[name="unit-${i}"]`).value=x.unit}});showApproval(r);$('#dailyPage').scrollIntoView({behavior:'smooth'});if(needEdit&&!editIsUnlocked())$('#unlockEdit').click()}
 async function removeExisting(id){const go=async()=>{if(confirm('دڵنیایت لە سڕینەوەی ئەم پەڕەیە؟')){await deleteRecord(id);await refresh()}};if(editIsUnlocked())return go();if(!localStorage.getItem(pinKey('admin')))return setPin('admin','کۆدی دەستکاری');openPin('سڕینەوەی پەڕە','کۆدی دەستکاری بنووسە.',async p=>{if(await verifyPin('admin',p)){await go();return true}alert('کۆد هەڵەیە');return false})}
 function openApproval(id){approvalRecordId=id;$('#approvalPin').value='';$('#approvalComment').value='';getRecord(id).then(r=>$('#approvalRecordTitle').textContent=`${r.date} — ${r.location||''}`);$('#approvalModal').classList.remove('hidden')}
 async function approvalAction(action){const role=$('#approvalRole').value,p=$('#approvalPin').value.trim();if(!localStorage.getItem(pinKey(role))){closeModal('approvalModal');return setPin(role,role==='manager'?'کۆدی بەڕێوەبەر':'کۆدی سەرپەرشتیار')}if(!await verifyPin(role,p))return alert('کۆد هەڵەیە');const r=await getRecord(approvalRecordId);r.approvals=[...(r.approvals||[]),{role,action,comment:$('#approvalComment').value.trim(),at:Date.now()}];r.status=action==='return'?'returned':'approved';r.updatedAt=Date.now();await putRecord(r);closeModal('approvalModal');await refresh();alert(action==='return'?'پەڕەکە گەڕێندرایەوە':'پەڕەکە پەسەند کرا')}
