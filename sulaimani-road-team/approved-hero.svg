@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Karwan Saeed Road Marking Team">
+<defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0e4b80"/><stop offset=".55" stop-color="#377caf"/><stop offset="1" stop-color="#e6a13a"/></linearGradient>
+  <linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#222a31"/><stop offset="1" stop-color="#080b0e"/></linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0a4"/><stop offset=".25" stop-color="#e5bd45"/><stop offset=".6" stop-color="#a36a0d"/><stop offset="1" stop-color="#ffd86b"/></linearGradient>
+  <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".6"/></filter>
+</defs>
+<rect width="1600" height="900" fill="#071018"/>
+<rect width="1600" height="520" fill="url(#sky)"/>
+<circle cx="1455" cy="225" r="65" fill="#ffd76b" opacity=".9"/>
+<path d="M770 430 L1000 245 1140 380 1270 285 1460 430Z" fill="#243443" opacity=".92"/>
+<path d="M900 430 L1110 320 1220 390 1375 320 1600 430Z" fill="#31495a" opacity=".9"/>
+<g transform="translate(35,118)">
+ <rect width="560" height="330" rx="8" fill="#c8bca7" stroke="#8f806d" stroke-width="8"/>
+ <rect x="48" y="95" width="460" height="44" fill="#a99473"/>
+ <g fill="#23475e"><rect x="65" y="165" width="105" height="95"/><rect x="210" y="165" width="105" height="95"/><rect x="355" y="165" width="105" height="95"/></g>
+ <rect x="238" y="235" width="90" height="95" fill="#1b3244"/>
+ <text x="280" y="66" text-anchor="middle" direction="rtl" font-family="sans-serif" font-size="31" font-weight="800" fill="#d9b53a">بەڕێوەبەرایەتی هاتوچۆی سلێمانی</text>
+ <text x="280" y="104" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="800" fill="#f2d770">SULAIMANI TRAFFIC DIRECTORATE</text>
+</g>
+<path d="M0 900 L370 438 L1230 438 L1600 900Z" fill="url(#road)"/>
+<path d="M796 454 L745 900 L855 900 L805 454Z" fill="#f2efcf"/>
+<path d="M524 470 L195 900 L270 900 L570 470Z" fill="#e0b92c"/>
+<path d="M1078 470 L1330 900 L1405 900 L1124 470Z" fill="#e0b92c"/>
+<g fill="#f6f6f6" opacity=".95"><path d="M530 645 l95 -60 -20 42 100 -14 -128 91z"/><path d="M1070 645 l-95 -60 20 42 -100 -14 128 91z"/><path d="M790 595 l-58 75 42 -12 0 90 52 0 0-90 42 12 -58-75z"/></g>
+<g transform="translate(800 145)" filter="url(#shadow)">
+ <circle r="128" fill="#0b0c0f" stroke="url(#gold)" stroke-width="18"/>
+ <text y="25" text-anchor="middle" font-family="Arial, sans-serif" font-size="106" font-weight="900" fill="url(#gold)">KS</text>
+ <path d="M0 48 L-42 113 L-8 88 L0 122 L8 88 L42 113Z" fill="url(#gold)"/>
+ <path d="M0 64 L0 111" stroke="#111" stroke-width="8" stroke-dasharray="8 8"/>
+</g>
+<text x="800" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="45" font-weight="800" fill="url(#gold)" filter="url(#shadow)">karwan saeed</text>
+<g filter="url(#shadow)">
+ <rect x="400" y="365" width="800" height="150" rx="45" fill="#090d10" stroke="url(#gold)" stroke-width="7"/>
+ <text x="800" y="442" text-anchor="middle" direction="rtl" font-family="sans-serif" font-size="58" font-weight="900" fill="#f4cf64">کارو چالاکی تیمی بۆیاخ</text>
+ <text x="800" y="490" text-anchor="middle" font-family="Arial, sans-serif" font-size="29" font-weight="700" letter-spacing="3" fill="#f5e8b6">ROAD MARKING TEAM WORK</text>
+</g>
+<g transform="translate(20 650)" font-family="sans-serif" font-weight="800" fill="#f6d978">
+ <g><rect width="245" height="125" rx="22" fill="#0c1115" stroke="#cda22f" stroke-width="4"/><text x="122" y="82" text-anchor="middle" font-size="30">ژماردن</text></g>
+ <g transform="translate(263)"><rect width="245" height="125" rx="22" fill="#0c1115" stroke="#cda22f" stroke-width="4"/><text x="122" y="82" text-anchor="middle" font-size="30">کاتاڵۆگ</text></g>
+ <g transform="translate(526)"><rect width="245" height="125" rx="22" fill="#0c1115" stroke="#cda22f" stroke-width="4"/><text x="122" y="82" text-anchor="middle" font-size="30">وێنەکان</text></g>
+ <g transform="translate(789)"><rect width="245" height="125" rx="22" fill="#0c1115" stroke="#cda22f" stroke-width="4"/><text x="122" y="82" text-anchor="middle" font-size="30">تۆماری ڕۆژانە</text></g>
+ <g transform="translate(1052)"><rect width="245" height="125" rx="22" fill="#0c1115" stroke="#cda22f" stroke-width="4"/><text x="122" y="82" text-anchor="middle" font-size="30">تیمی کار</text></g>
+ <g transform="translate(1315)"><rect width="245" height="125" rx="22" fill="#0c1115" stroke="#cda22f" stroke-width="4"/><text x="122" y="82" text-anchor="middle" font-size="30">ڕێکخستنەکان</text></g>
+</g>
+<rect y="790" width="1600" height="110" fill="#070a0d" opacity=".96"/>
+<text x="70" y="852" font-family="Arial, sans-serif" font-size="27" font-weight="800" fill="#d8b44c">App Manager: Karwan Saeed</text>
+<text x="800" y="842" text-anchor="middle" direction="rtl" font-family="sans-serif" font-size="24" font-weight="700" fill="#f2ead4">شەقامێکی باشتر، کۆمەڵگەیەکی سەلامەتتر</text>
+<text x="800" y="873" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#cda22f">BETTER ROADS · SAFER COMMUNITIES</text>
+</svg>
