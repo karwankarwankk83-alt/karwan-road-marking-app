@@ -54,5 +54,30 @@ async function install(){
     alert('ئیمەیڵی پشتڕاستکردنەوە دووبارە نێردرا. Inbox و Spam/Junk بپشکنە.');
   };
 }
+function installAutoArea(){
+  const lengthInput=document.querySelector('[name="length"]');
+  const widthInput=document.querySelector('[name="width"]');
+  const areaInput=document.querySelector('[name="area"]');
+  const form=document.querySelector('#workForm');
+  const approvalBtn=document.querySelector('#submitApproval');
+  if(!lengthInput||!widthInput||!areaInput)return;
+  areaInput.readOnly=true;
+  areaInput.placeholder='خۆکار';
+  areaInput.title='ڕووبەر خۆکارانە لە درێژی × پانی هەژمار دەکرێت';
+  const calculateArea=()=>{
+    const lengthM=Number(lengthInput.value||0);
+    const widthCm=Number(widthInput.value||0);
+    const areaM2=lengthM*(widthCm/100);
+    areaInput.value=Number.isFinite(areaM2)?areaM2.toFixed(2):'0.00';
+  };
+  lengthInput.addEventListener('input',calculateArea);
+  widthInput.addEventListener('input',calculateArea);
+  lengthInput.addEventListener('change',calculateArea);
+  widthInput.addEventListener('change',calculateArea);
+  form?.addEventListener('submit',calculateArea,true);
+  approvalBtn?.addEventListener('click',calculateArea,true);
+  calculateArea();
+}
 install();
+installAutoArea();
 })();
