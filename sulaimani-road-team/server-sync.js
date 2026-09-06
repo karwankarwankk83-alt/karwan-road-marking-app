@@ -34,13 +34,13 @@ async function login(){
   const email=document.querySelector('#serverEmail').value.trim(), password=document.querySelector('#serverPassword').value;
   if(!email||!password)return alert('ئیمەیڵ و وشەی نهێنی بنووسە');
   const {error}=await sb.auth.signInWithPassword({email,password}); if(error)return alert('هەڵە لە چوونەژوورەوە: '+error.message);
-  await updateSessionUi(); await refresh(); alert('بە سەرکەوتوویی پەیوەست بوویت بە سێرڤەر');
+  await updateSessionUi(); await autoUploadMissingLocalRecords(); await refresh(); alert('بە سەرکەوتوویی پەیوەست بوویت بە سێرڤەر');
 }
 async function signup(){
   const full_name=document.querySelector('#serverName').value.trim(),email=document.querySelector('#serverEmail').value.trim(),password=document.querySelector('#serverPassword').value;
   if(!email||password.length<6)return alert('ئیمەیڵ و وشەی نهێنیی لانیکەم ٦ پیت/ژمارە بنووسە');
   const {data,error}=await sb.auth.signUp({email,password,options:{data:{full_name}}}); if(error)return alert('هەڵە لە دروستکردنی هەژمار: '+error.message);
-  if(data.session){await updateSessionUi();await refresh();alert('هەژمارەکە دروست بوو و پەیوەست بوویت');}
+  if(data.session){await updateSessionUi();await autoUploadMissingLocalRecords();await refresh();alert('هەژمارەکە دروست بوو و پەیوەست بوویت');}
   else alert('هەژمارەکە دروست بوو. ئەگەر ئیمەیڵی پشتڕاستکردنەوە هات، کرتەی لە لینکەکە بکە و پاشان بچۆ ژوورەوە.');
 }
 async function logout(){await sb.auth.signOut();serverSession=null;await updateSessionUi();await refresh();alert('لە سێرڤەر چوویتە دەرەوە؛ داتای ناوخۆی مۆبایل هەر ماوە.');}
@@ -94,9 +94,22 @@ async function uploadLocalRecords(){
   let ok=0;for(const r of records){try{await serverPut(r);ok++;}catch(e){console.error(e);}}
   await refresh();alert(`${ok} تۆمار بۆ سێرڤەر نێردرا`);
 }
+async function autoUploadMissingLocalRecords(){
+  if(!serverSession)return;
+  try{
+    const local=await localAllRecords();
+    if(!local.length)return;
+    const {data,error}=await sb.from('work_records').select('id');
+    if(error)throw error;
+    const serverIds=new Set((data||[]).map(r=>r.id));
+    let pushed=0;
+    for(const r of local){if(serverIds.has(r.id))continue;try{await serverPut(r);pushed++;}catch(e){console.error('auto sync record failed',e);}}
+    if(pushed)console.log(`Auto-synced ${pushed} local records to server`);
+  }catch(e){console.error('Auto sync failed',e);}
+}
 
 injectServerUi();
-updateSessionUi().then(()=>refresh());
-sb.auth.onAuthStateChange((_event,session)=>{serverSession=session;updateSessionUi();setTimeout(()=>refresh(),0);});
+updateSessionUi().then(async()=>{if(serverSession)await autoUploadMissingLocalRecords();await refresh();});
+sb.auth.onAuthStateChange((_event,session)=>{serverSession=session;updateSessionUi();setTimeout(async()=>{if(session)await autoUploadMissingLocalRecords();await refresh();},0);});
 window.teamPaintServer={client:sb,get session(){return serverSession;}};
 })();
