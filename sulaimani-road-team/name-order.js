@@ -40,4 +40,25 @@ function init(){
   apply();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+
+// Register and actively refresh the PWA service worker so future production updates
+// reach already-installed copies without asking staff to reinstall every time.
+if('serviceWorker' in navigator){
+  let swReloading=false;
+  const reloadForNewWorker=()=>{
+    if(swReloading)return;
+    swReloading=true;
+    location.reload();
+  };
+  navigator.serviceWorker.addEventListener('controllerchange',reloadForNewWorker);
+  const updateWorker=async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'});
+      await reg.update();
+    }catch(e){console.warn('PWA update check failed',e);}
+  };
+  window.addEventListener('load',updateWorker,{once:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateWorker();});
+  setInterval(()=>{if(!document.hidden)updateWorker();},5*60*1000);
+}
 })();
