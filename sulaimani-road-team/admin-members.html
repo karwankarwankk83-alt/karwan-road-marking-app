@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ckb" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17384f">
+<title>Admin — بەکارهێنەران</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef2f5;color:#142634;font-family:Arial,sans-serif}.wrap{max-width:760px;margin:auto;padding:16px}.card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 8px 28px #0001;margin:12px 0}h1,h2,h3{margin:0 0 10px}.muted{color:#66747e;font-size:13px;line-height:1.7}.gate{position:fixed;inset:0;background:#071018ee;display:grid;place-items:center;padding:18px;z-index:10}.gate.hidden{display:none}.gate .card{width:min(420px,100%)}input{width:100%;padding:13px;border:1px solid #c8d0d6;border-radius:11px;font-size:18px;margin:8px 0}button{border:0;border-radius:11px;padding:11px 14px;font-weight:800;font-size:15px;cursor:pointer}.primary{background:#17384f;color:#fff;width:100%}.refresh{background:#17384f;color:#fff}.row{border:1px solid #dde3e7;border-radius:14px;padding:13px;margin:10px 0;background:#fff}.name{font-size:18px;font-weight:900}.email{direction:ltr;text-align:right;overflow-wrap:anywhere;margin:5px 0}.meta{font-size:12px;color:#6b7780;line-height:1.7}.status{font-weight:900}.on{color:#16753a}.off{color:#8b3131}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.disable{background:#a32626;color:#fff}.enable{background:#16753a;color:#fff}.approve{background:#1769aa;color:#fff}.reject{background:#7a4a12;color:#fff}.self{display:inline-block;background:#eef3f7;padding:7px 9px;border-radius:9px;margin-top:8px;font-weight:800}.top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.count{background:#eef3f7;border-radius:999px;padding:7px 10px;font-weight:800}.err{color:#a32626}.ok{color:#16753a}@media(max-width:520px){.actions button{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="top"><div><h1>🔐 Admin</h1><div class="muted">بەڕێوەبردنی بەکارهێنەرانی تیمی بۆیاخ</div></div><span id="count" class="count">0</span></div>
+    <div id="msg" class="muted"></div>
+    <button id="refresh" class="refresh" type="button">🔄 نوێکردنەوە</button>
+  </div>
+  <div class="card"><h2>👥 بەکارهێنەران</h2><div id="list"></div></div>
+</div>
+<div id="gate" class="gate"><div class="card"><h2>🔐 کۆدی Admin</h2><p class="muted">کۆدی Admin بنووسە بۆ بینینی ناو و ئیمەیڵ و دەسەڵاتی دەرکردنی بەکارهێنەر.</p><input id="pin" type="password" inputmode="numeric" maxlength="12" placeholder="کۆدی Admin"><button id="enter" class="primary" type="button">چوونەژوورەوە</button><div id="gateMsg" class="muted"></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(()=>{
+const URL='https://gandmxiegxzekdukpiqe.supabase.co';
+const KEY='sb_publishable_rX-VPhPgbjhzhpJ_iDcQzw_cdcY5VLz';
+const sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,storage:localStorage,autoRefreshToken:true}});
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function hash(pin){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pin));return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function verifyPin(){const stored=localStorage.getItem('srt-pin-admin');if(!stored){$('#gateMsg').innerHTML='<span class="err">سەرەتا لە ئەپەکە کۆدی Admin دابنێ.</span>';return false}const p=$('#pin').value.trim();if(!p)return false;if(await hash(p)!==stored){$('#gateMsg').innerHTML='<span class="err">کۆدەکە هەڵەیە.</span>';return false}return true}
+async function ensureAdmin(){const {data:{user}}=await sb.auth.getUser();if(!user){$('#msg').innerHTML='<span class="err">هەژماری Admin لە سێرڤەرەکەدا داخڵ نییە. سەرەتا ئەپی سەرەکی بکەرەوە و بە هەژماری Admin بچۆ ژوورەوە.</span>';return null}const {data:me,error}=await sb.from('profiles').select('id,role').eq('id',user.id).maybeSingle();if(error||me?.role!=='admin'){$('#msg').innerHTML='<span class="err">ئەم هەژمارە Admin نییە.</span>';return null}return user}
+const age=ts=>{const sec=Math.max(0,Math.floor((Date.now()-new Date(ts).getTime())/1000));if(sec<60)return sec+' چرکە';const m=Math.floor(sec/60);if(m<60)return m+' خولەک';const h=Math.floor(m/60);if(h<24)return h+' کاتژمێر';return Math.floor(h/24)+' ڕۆژ'};
+async function load(){const user=await ensureAdmin();if(!user)return;$('#msg').textContent='خوێندنەوەی لیست...';const {data,error}=await sb.from('device_installs').select('install_id,full_name,email,last_seen,first_seen,display_mode,device_info,is_enabled,approval_status,linked_user_id').order('last_seen',{ascending:false});if(error){$('#msg').innerHTML='<span class="err">هەڵە لە خوێندنەوەی لیست: '+esc(error.message)+'</span>';return}const rows=data||[];$('#count').textContent=rows.length;$('#msg').innerHTML='<span class="ok">لیست نوێکرایەوە ✅</span>';$('#list').innerHTML=rows.length?rows.map(r=>{const info=r.device_info||{};const approved=r.approval_status==='approved';const st=approved?(r.is_enabled?'🟢 چالاک':'⛔ دەرهێنراو'):r.approval_status==='rejected'?'⛔ ڕەتکراوە':'⏳ چاوەڕێی پەسەند';const self=r.linked_user_id===user.id;let acts='';if(self)acts='<span class="self">🔐 هەژماری Admin</span>';else if(!approved)acts=`<div class="actions"><button class="approve" data-approve="${r.install_id}">✅ پەسەندکردن</button><button class="reject" data-reject="${r.install_id}">⛔ ڕەتکردنەوە</button></div>`;else acts=`<div class="actions"><button class="${r.is_enabled?'disable':'enable'}" data-access="${r.install_id}" data-next="${r.is_enabled?'0':'1'}">${r.is_enabled?'🚫 دەرهێنان لە ئەپ':'✅ چالاککردنەوە'}</button></div>`;return `<div class="row"><div class="name">${esc(r.full_name)}</div><div class="email">${esc(r.email)}</div><div class="meta"><span class="status ${r.is_enabled&&approved?'on':'off'}">${st}</span> · ${r.display_mode==='standalone'?'📲 دامەزراو':'🌐 براوزەر'} · ${esc(info.platform||'')}<br>دوا چالاکی: ${esc(age(r.last_seen))} پێش ئێستا</div>${acts}</div>`}).join(''):'<div class="muted">هیچ بەکارهێنەرێک تۆمار نەکراوە.</div>';
+$('#list').querySelectorAll('[data-access]').forEach(b=>b.onclick=async()=>{const enabled=b.dataset.next==='1';if(!enabled&&!confirm('دڵنیایت دەتەوێت ئەم بەکارهێنەرە لە ئەپ دەربکەیت؟'))return;b.disabled=true;const {error}=await sb.rpc('admin_set_device_enabled',{target_install:b.dataset.access,enabled});if(error)alert('سەرکەوتوو نەبوو: '+error.message);else await load();b.disabled=false});
+$('#list').querySelectorAll('[data-approve]').forEach(b=>b.onclick=async()=>{b.disabled=true;const {error}=await sb.rpc('admin_set_device_approval',{target_install:b.dataset.approve,new_status:'approved'});if(error)alert('سەرکەوتوو نەبوو: '+error.message);else await load();b.disabled=false});
+$('#list').querySelectorAll('[data-reject]').forEach(b=>b.onclick=async()=>{if(!confirm('داواکارییەکە ڕەت بکرێتەوە؟'))return;b.disabled=true;const {error}=await sb.rpc('admin_set_device_approval',{target_install:b.dataset.reject,new_status:'rejected'});if(error)alert('سەرکەوتوو نەبوو: '+error.message);else await load();b.disabled=false});
+}
+$('#enter').onclick=async()=>{if(!await verifyPin())return;$('#gate').classList.add('hidden');await load()};$('#pin').addEventListener('keydown',e=>{if(e.key==='Enter')$('#enter').click()});$('#refresh').onclick=load;
+})();
+</script>
+</body>
+</html>
