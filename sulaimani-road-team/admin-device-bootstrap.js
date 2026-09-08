@@ -8,6 +8,7 @@ async function waitReady(){
 }
 function showAdminLogin(email){
   document.documentElement.classList.remove('member-mode');
+  document.documentElement.classList.add('admin-login-required');
   document.querySelector('#memberView')?.classList.add('hidden');
   const modal=document.querySelector('#serverModal');
   if(!modal)return;
@@ -22,22 +23,49 @@ function showAdminLogin(email){
   if(name?.closest('label'))name.closest('label').style.display='none';
   if(emailInput&&!emailInput.value)emailInput.value=email||'';
   const help=document.querySelector('#serverHelp');
-  if(help)help.textContent='🔐 ئەم ئامێرە بە هەژماری Admin بەستراوەتەوە. تەنها یەک جار وشەی نهێنی Admin بنووسە بۆ چالاککردنی دەسەڵاتی Admin لەم ئامێرە.';
+  if(help)help.textContent='🔐 ئەم ئامێرە بە هەژماری Admin بەستراوەتەوە. وشەی نهێنی Admin بنووسە و «چوونەژوورەوە» دابگرە.';
   modal.classList.remove('hidden');
 }
-(async()=>{
-  if(!await waitReady())return;
+let checking=false,done=false;
+async function checkLinkedAdmin(){
+  if(done||checking)return false;
+  checking=true;
   try{
+    if(!await waitReady())return false;
     const sb=window.teamPaintServer.client;
     const {data:{user}}=await sb.auth.getUser();
-    if(user)return;
-    if(!window.teamPaintDevice.registered)return;
+    if(user){
+      const {data:p}=await sb.from('profiles').select('role').eq('id',user.id).maybeSingle();
+      if(p?.role==='admin'){
+        done=true;
+        document.documentElement.classList.remove('member-mode','admin-login-required');
+        document.documentElement.classList.add('admin-mode');
+        document.querySelector('#memberView')?.classList.add('hidden');
+        window.teamPaintAccess={role:'admin'};
+        return true;
+      }
+      return false;
+    }
+    if(!window.teamPaintDevice.registered)return false;
     const st=await window.teamPaintDevice.api('status');
     if(st?.approval_status==='approved'&&st?.is_enabled&&st?.linked_role==='admin'){
+      done=true;
       window.teamPaintLinkedAdminDevice=true;
+      window.teamPaintAccess={role:'admin-login-required'};
       showAdminLogin(st.linked_email||localStorage.getItem('team-paint-device-email')||'');
-      setTimeout(()=>showAdminLogin(st.linked_email||''),800);
+      setTimeout(()=>showAdminLogin(st.linked_email||''),500);
+      return true;
     }
-  }catch(e){console.warn('admin device bootstrap',e);}
+  }catch(e){console.warn('admin device bootstrap',e);}finally{checking=false;}
+  return false;
+}
+(async()=>{
+  await checkLinkedAdmin();
+  window.addEventListener('team-paint-device-ready',()=>{done=false;checkLinkedAdmin();});
+  let tries=0;
+  const timer=setInterval(async()=>{
+    if(done||tries++>20){clearInterval(timer);return;}
+    await checkLinkedAdmin();
+  },500);
 })();
 })();
